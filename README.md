@@ -20,7 +20,7 @@ Reasons to Use
 Using
 -----
 
-1. Put your code in main.cpp
+1. Put your code in `src/main.cpp`
 2. Build your code ```make```
 3. Upload your code ```make upload```
 
@@ -41,7 +41,7 @@ Where everything came from
 
 - The `/teensy3` sub-folder is taken from [The Teensy 3.0 Cores](https://github.com/PaulStoffregen/cores/tree/master/teensy3)
 - The `/teensy3/tools/` sub-folder is taken from [Teensyduino](http://www.pjrc.com/teensy/td_download.html)
-- The `main.cpp` file is moved, unmodified from `/teensy3/main.cpp`
+- The `/src/main.cpp` file is moved, unmodified from `/teensy3/main.cpp`
 - The `Makefile` file is moved, modified from `/teensy3/Makefile`
 
 Modifications to `Makefile` include
