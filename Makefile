@@ -16,7 +16,7 @@ BUILDDIR = $(abspath $(CURDIR)/build)
 #************************************************************************
 
 # path location for Teensy Loader, teensy_post_compile and teensy_reboot
-TOOLSPATH = teensy3/tools
+TOOLSPATH = $(CURDIR)/tools
 
 # path location for the arm-none-eabi compiler
 COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
