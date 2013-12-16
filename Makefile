@@ -18,6 +18,12 @@ BUILDDIR = $(abspath $(CURDIR)/build)
 # path location for Teensy Loader, teensy_post_compile and teensy_reboot
 TOOLSPATH = $(CURDIR)/tools
 
+# path location for Teensy 3 core
+COREPATH = teensy3
+
+# path location for Arduino libraries
+LIBRARYPATH = libraries
+
 # path location for the arm-none-eabi compiler
 COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
 
@@ -26,7 +32,7 @@ COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
 #************************************************************************
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -Isrc -Iteensy3
+CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -Isrc -I$(COREPATH)
 
 # compiler options for C++ only
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
@@ -34,7 +40,7 @@ CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 # compiler options for C only
 CFLAGS =
 
-LDSCRIPT = teensy3/mk20dx128.ld
+LDSCRIPT = $(COREPATH)/mk20dx128.ld
 
 # linker options
 LDFLAGS = -Os -Wl,--gc-sections -mcpu=cortex-m4 -mthumb -T$(LDSCRIPT)
@@ -49,11 +55,17 @@ OBJCOPY = $(abspath $(COMPILERPATH))/arm-none-eabi-objcopy
 SIZE = $(abspath $(COMPILERPATH))/arm-none-eabi-size
 
 # automatically create lists of the sources and objects
-TC_FILES := $(wildcard teensy3/*.c)
-TCPP_FILES := $(wildcard teensy3/*.cpp)
+LC_FILES := $(wildcard $(LIBRARYPATH)/*/*.c)
+LCPP_FILES := $(wildcard $(LIBRARYPATH)/*/*.cpp)
+TC_FILES := $(wildcard $(COREPATH)/*.c)
+TCPP_FILES := $(wildcard $(COREPATH)/*.cpp)
 C_FILES := $(wildcard src/*.c)
 CPP_FILES := $(wildcard src/*.cpp)
-SOURCES := $(C_FILES:.c=.o) $(CPP_FILES:.cpp=.o) $(TC_FILES:.c=.o) $(TCPP_FILES:.cpp=.o)
+
+# include paths for libraries
+L_INC := $(foreach lib,$(filter %/, $(wildcard $(LIBRARYPATH)/*/)), -I$(lib))
+
+SOURCES := $(C_FILES:.c=.o) $(CPP_FILES:.cpp=.o) $(TC_FILES:.c=.o) $(TCPP_FILES:.cpp=.o) $(LC_FILES:.c=.o) $(LCPP_FILES:.cpp=.o)
 OBJS := $(foreach src,$(SOURCES), $(BUILDDIR)/$(src))
 
 all: hex
@@ -73,12 +85,12 @@ upload: post_compile reboot
 $(BUILDDIR)/%.o: %.c
 	@echo "[CC]\t$<"
 	@mkdir -p "$(dir $@)"
-	@$(CC) $(CPPFLAGS) $(CFLAGS) -o "$@" -c "$<"
+	@$(CC) $(CPPFLAGS) $(CFLAGS) $(L_INC) -o "$@" -c "$<"
 
 $(BUILDDIR)/%.o: %.cpp
 	@echo "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o "$@" -c "$<"
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(L_INC) -o "$@" -c "$<"
 
 $(TARGET).elf: $(OBJS) $(LDSCRIPT)
 	@echo "[LD]\t$@"
