@@ -36,7 +36,7 @@ COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
 #************************************************************************
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DF_CPU=$(TEENSY_CORE_SPEED) -DARDUIO=105 -Isrc -I$(COREPATH)
+CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DF_CPU=$(TEENSY_CORE_SPEED) -DARDUINO=105 -Isrc -I$(COREPATH)
 
 # compiler options for C++ only
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
