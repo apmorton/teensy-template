@@ -7,6 +7,10 @@ TEENSY = 30
 # Set to 24000000, 48000000, or 96000000 to set CPU core speed
 TEENSY_CORE_SPEED = 48000000
 
+# Some libraries will require this to be defined
+# If you define this, you will break the default main.cpp
+#ARDUINO = 105
+
 # configurable options
 OPTIONS = -DUSB_SERIAL -DLAYOUT_US_ENGLISH
 
@@ -36,7 +40,7 @@ COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
 #************************************************************************
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DF_CPU=$(TEENSY_CORE_SPEED) -DARDUINO=105 -Isrc -I$(COREPATH)
+CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH)
 
 # compiler options for C++ only
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
@@ -55,6 +59,11 @@ else
     else
         $(error Invalid setting for TEENSY)
     endif
+endif
+
+# set arduino define if given
+ifdef ARDUINO
+	CPPFLAGS += -DARDUINO=$(ARDUINO)
 endif
 
 # linker options
@@ -76,11 +85,12 @@ TC_FILES := $(wildcard $(COREPATH)/*.c)
 TCPP_FILES := $(wildcard $(COREPATH)/*.cpp)
 C_FILES := $(wildcard src/*.c)
 CPP_FILES := $(wildcard src/*.cpp)
+INO_FILES := $(wildcard src/*.ino)
 
 # include paths for libraries
 L_INC := $(foreach lib,$(filter %/, $(wildcard $(LIBRARYPATH)/*/)), -I$(lib))
 
-SOURCES := $(C_FILES:.c=.o) $(CPP_FILES:.cpp=.o) $(TC_FILES:.c=.o) $(TCPP_FILES:.cpp=.o) $(LC_FILES:.c=.o) $(LCPP_FILES:.cpp=.o)
+SOURCES := $(C_FILES:.c=.o) $(CPP_FILES:.cpp=.o) $(INO_FILES:.ino=.o) $(TC_FILES:.c=.o) $(TCPP_FILES:.cpp=.o) $(LC_FILES:.c=.o) $(LCPP_FILES:.cpp=.o)
 OBJS := $(foreach src,$(SOURCES), $(BUILDDIR)/$(src))
 
 all: hex
@@ -106,6 +116,11 @@ $(BUILDDIR)/%.o: %.cpp
 	@echo "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(L_INC) -o "$@" -c "$<"
+
+$(BUILDDIR)/%.o: %.ino
+	@echo "[CXX]\t$<"
+	@mkdir -p "$(dir $@)"
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(L_INC) -o "$@" -x c++ -include Arduino.h -c "$<"
 
 $(TARGET).elf: $(OBJS) $(LDSCRIPT)
 	@echo "[LD]\t$@"
