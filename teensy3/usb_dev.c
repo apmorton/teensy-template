@@ -323,6 +323,8 @@ static void usb_setup(void)
 		usb_cdc_line_rtsdtr = setup.wValue;
 		//serial_print("set control line state\n");
 		break;
+	  case 0x2321: // CDC_SEND_BREAK
+		break;
 	  case 0x2021: // CDC_SET_LINE_CODING
 		//serial_print("set coding, waiting...\n");
 		return;
@@ -529,8 +531,10 @@ usb_packet_t *usb_rx(uint32_t endpoint)
 	if (endpoint >= NUM_ENDPOINTS) return NULL;
 	__disable_irq();
 	ret = rx_first[endpoint];
-	if (ret) rx_first[endpoint] = ret->next;
-	usb_rx_byte_count_data[endpoint] -= ret->len;
+	if (ret) {
+		rx_first[endpoint] = ret->next;
+		usb_rx_byte_count_data[endpoint] -= ret->len;
+	}
 	__enable_irq();
 	//serial_print("rx, epidx=");
 	//serial_phex(endpoint);
