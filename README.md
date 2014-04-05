@@ -1,10 +1,10 @@
-Teensy 3.0 Project Template
+Teensy 3.X Project Template
 ===========================
 
 Purpose
 -------
 
-An easy starting point for a Teensy 3.0 project which might not fit inside the
+An easy starting point for a Teensy 3.X project which might not fit inside the
 arduino build environment.
 
 
@@ -22,8 +22,9 @@ Using
 
 1. Put your code in `src/main.cpp`
 2. Put any libraries you need in `libraries`
-3. Build your code ```make```
-4. Upload your code ```make upload```
+3. Set the TEENSY variable in `Makefile` according to your teensy version
+4. Build your code ```make```
+5. Upload your code ```make upload```
 
 
 Make Targets
@@ -40,7 +41,7 @@ Make Targets
 Where everything came from
 --------------------------
 
-- The `teensy3` sub-folder is taken from [The Teensy 3.0 Cores](https://github.com/PaulStoffregen/cores/tree/master/teensy3)
+- The `teensy3` sub-folder is taken from [The Teensy 3 Cores](https://github.com/PaulStoffregen/cores/tree/master/teensy3)
 - The `tools` sub-folder is taken from [Teensyduino](http://www.pjrc.com/teensy/td_download.html)
 - The `src/main.cpp` file is moved, unmodified from `teensy3/main.cpp`
 - The `Makefile` file is moved, modified from `teensy3/Makefile`

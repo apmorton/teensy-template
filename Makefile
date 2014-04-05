@@ -1,12 +1,16 @@
 # The name of your project (used to name the compiled .hex file)
 TARGET = $(notdir $(CURDIR))
 
+# The teensy version to use, 30 or 31
+TEENSY = 30
+
+# Set to 24000000, 48000000, or 96000000 to set CPU core speed
+TEENSY_CORE_SPEED = 48000000
+
 # configurable options
-OPTIONS = -DF_CPU=48000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH
+OPTIONS = -DUSB_SERIAL -DLAYOUT_US_ENGLISH
 
-# options needed by many Arduino libraries to configure for Teensy 3.0
-OPTIONS += -D__MK20DX128__ -DARDUIO=104
-
+# directory to build in
 BUILDDIR = $(abspath $(CURDIR)/build)
 
 #************************************************************************
@@ -32,7 +36,7 @@ COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
 #************************************************************************
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -Isrc -I$(COREPATH)
+CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DF_CPU=$(TEENSY_CORE_SPEED) -DARDUIO=105 -Isrc -I$(COREPATH)
 
 # compiler options for C++ only
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
@@ -40,7 +44,18 @@ CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 # compiler options for C only
 CFLAGS =
 
-LDSCRIPT = $(COREPATH)/mk20dx128.ld
+# compiler options specific to teensy version
+ifeq ($(TEENSY), 30)
+    CPPFLAGS += -D__MK20DX128__
+    LDSCRIPT = $(COREPATH)/mk20dx128.ld
+else
+    ifeq ($(TEENSY), 31)
+        CPPFLAGS += -D__MK20DX256__
+        DSCRIPT = $(COREPATH)/mk20dx256.ld
+    else
+        $(error Invalid setting for TEENSY)
+    endif
+endif
 
 # linker options
 LDFLAGS = -Os -Wl,--gc-sections -mcpu=cortex-m4 -mthumb -T$(LDSCRIPT)
