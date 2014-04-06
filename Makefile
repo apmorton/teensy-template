@@ -55,7 +55,7 @@ ifeq ($(TEENSY), 30)
 else
     ifeq ($(TEENSY), 31)
         CPPFLAGS += -D__MK20DX256__
-        DSCRIPT = $(COREPATH)/mk20dx256.ld
+        LDSCRIPT = $(COREPATH)/mk20dx256.ld
     else
         $(error Invalid setting for TEENSY)
     endif
