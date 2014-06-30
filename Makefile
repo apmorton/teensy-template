@@ -26,6 +26,15 @@ BUILDDIR = $(abspath $(CURDIR)/build)
 # path location for Teensy Loader, teensy_post_compile and teensy_reboot
 TOOLSPATH = $(CURDIR)/tools
 
+ifeq ($(OS),Windows_NT)
+    $(error What is Win Dose?)
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        TOOLSPATH = /Applications/Arduino.app/Contents/Resources/Java/hardware/tools/
+    endif
+endif
+
 # path location for Teensy 3 core
 COREPATH = teensy3
 
