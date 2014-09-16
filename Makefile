@@ -38,6 +38,15 @@ endif
 # path location for Teensy 3 core
 COREPATH = teensy3
 
+ifeq ($(OS),Windows_NT)
+    $(error What is Win Dose?)
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        COREPATH = /Applications/Arduino.app/Contents/Resources/Java/hardware/teensy/cores/teensy3
+    endif
+endif
+
 # path location for Arduino libraries
 LIBRARYPATH = libraries
 
@@ -91,7 +100,7 @@ SIZE = $(abspath $(COMPILERPATH))/arm-none-eabi-size
 LC_FILES := $(wildcard $(LIBRARYPATH)/*/*.c)
 LCPP_FILES := $(wildcard $(LIBRARYPATH)/*/*.cpp)
 TC_FILES := $(wildcard $(COREPATH)/*.c)
-TCPP_FILES := $(wildcard $(COREPATH)/*.cpp)
+TCPP_FILES := $(filter-out $(COREPATH)/main.cpp, $(wildcard $(COREPATH)/*.cpp))
 C_FILES := $(wildcard src/*.c)
 CPP_FILES := $(wildcard src/*.cpp)
 INO_FILES := $(wildcard src/*.ino)
