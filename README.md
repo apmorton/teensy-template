@@ -17,6 +17,14 @@ Reasons to Use
 - Because
 
 
+Setup
+-----
+
+Install the Teensy udev rule: `sudo cp tools/49-teensy.rules /etc/udev/rules.d/`
+
+Then unplug your Teensy and plug it back in.
+
+
 Using
 -----
 
@@ -45,6 +53,7 @@ Where everything came from
 - The `tools` sub-folder is taken from [Teensyduino](http://www.pjrc.com/teensy/td_download.html)
 - The `src/main.cpp` file is moved, unmodified from `teensy3/main.cpp`
 - The `Makefile` file is moved, modified from `teensy3/Makefile`
+- The `49-teensy.rules` file is taken from [PJRC's udev rules](http://www.pjrc.com/teensy/49-teensy.rules)
 
 Modifications to `Makefile` include
 - Add support for arduino libraries
