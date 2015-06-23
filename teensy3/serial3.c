@@ -28,7 +28,7 @@
  * SOFTWARE.
  */
 
-#include "mk20dx128.h"
+#include "kinetis.h"
 #include "core_pins.h"
 #include "HardwareSerial.h"
 
@@ -56,6 +56,16 @@ static uint8_t use9Bits = 0;
 static volatile BUFTYPE tx_buffer[TX_BUFFER_SIZE];
 static volatile BUFTYPE rx_buffer[RX_BUFFER_SIZE];
 static volatile uint8_t transmitting = 0;
+#if defined(KINETISK)
+  static volatile uint8_t *transmit_pin=NULL;
+  #define transmit_assert()   *transmit_pin = 1
+  #define transmit_deassert() *transmit_pin = 0
+#elif defined(KINETISL)
+  static volatile uint8_t *transmit_pin=NULL;
+  static uint8_t transmit_mask=0;
+  #define transmit_assert()   *(transmit_pin+4) = transmit_mask;
+  #define transmit_deassert() *(transmit_pin+8) = transmit_mask;
+#endif
 #if TX_BUFFER_SIZE > 255
 static volatile uint16_t tx_buffer_head = 0;
 static volatile uint16_t tx_buffer_tail = 0;
@@ -89,13 +99,19 @@ void serial3_begin(uint32_t divisor)
 	transmitting = 0;
 	CORE_PIN7_CONFIG = PORT_PCR_PE | PORT_PCR_PS | PORT_PCR_PFE | PORT_PCR_MUX(3);
 	CORE_PIN8_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3);
+#if defined(HAS_KINETISK_UART2)
 	UART2_BDH = (divisor >> 13) & 0x1F;
 	UART2_BDL = (divisor >> 5) & 0xFF;
 	UART2_C4 = divisor & 0x1F;
 	UART2_C1 = 0;
 	UART2_PFIFO = 0;
+#elif defined(HAS_KINETISL_UART2)
+	UART2_BDH = (divisor >> 8) & 0x1F;
+	UART2_BDL = divisor & 0xFF;
+	UART2_C1 = 0;
+#endif
 	UART2_C2 = C2_TX_INACTIVE;
-	NVIC_SET_PRIORITY(IRQ_UART2_STATUS, 64);
+	NVIC_SET_PRIORITY(IRQ_UART2_STATUS, IRQ_PRIORITY);
 	NVIC_ENABLE_IRQ(IRQ_UART2_STATUS);
 }
 
@@ -134,11 +150,23 @@ void serial3_end(void)
 	rx_buffer_tail = 0;
 }
 
+void serial3_set_transmit_pin(uint8_t pin)
+{
+	while (transmitting) ;
+	pinMode(pin, OUTPUT);
+	digitalWrite(pin, LOW);
+	transmit_pin = portOutputRegister(pin);
+	#if defined(KINETISL)
+	transmit_mask = digitalPinToBitMask(pin);
+	#endif
+}
+
 void serial3_putchar(uint32_t c)
 {
-	uint32_t head;
+	uint32_t head, n;
 
 	if (!(SIM_SCGC4 & SIM_SCGC4_UART2)) return;
+	if (transmit_pin) transmit_assert();
 	head = tx_buffer_head;
 	if (++head >= TX_BUFFER_SIZE) head = 0;
 	while (tx_buffer_tail == head) {
@@ -147,7 +175,9 @@ void serial3_putchar(uint32_t c)
 			if ((UART2_S1 & UART_S1_TDRE)) {
 				uint32_t tail = tx_buffer_tail;
 				if (++tail >= TX_BUFFER_SIZE) tail = 0;
-				UART2_D = tx_buffer[tail];
+				n = tx_buffer[tail];
+				if (use9Bits) UART2_C3 = (UART2_C3 & ~0x40) | ((n & 0x100) >> 2);
+				UART2_D = n;
 				tx_buffer_tail = tail;
 			}
 		} else if (priority >= 256) {
@@ -169,6 +199,16 @@ void serial3_write(const void *buf, unsigned int count)
 void serial3_flush(void)
 {
 	while (transmitting) yield(); // wait
+}
+
+int serial3_write_buffer_free(void)
+{
+	uint32_t head, tail;
+
+	head = tx_buffer_head;
+	tail = tx_buffer_tail;
+	if (head >= tail) return TX_BUFFER_SIZE - 1 - head + tail;
+	return tail - head - 1;
 }
 
 int serial3_available(void)
@@ -224,22 +264,21 @@ void uart2_status_isr(void)
 	uint32_t head, tail, n;
 	uint8_t c;
 
-	//digitalWriteFast(4, HIGH);
 	if (UART2_S1 & UART_S1_RDRF) {
-		//digitalWriteFast(5, HIGH);
-		n = UART2_D;
-		if (use9Bits && (UART2_C3 & 0x80)) n |= 0x100;
+		if (use9Bits && (UART2_C3 & 0x80)) {
+			n = UART2_D | 0x100;
+		} else {
+			n = UART2_D;
+		}
 		head = rx_buffer_head + 1;
 		if (head >= RX_BUFFER_SIZE) head = 0;
 		if (head != rx_buffer_tail) {
 			rx_buffer[head] = n;
 			rx_buffer_head = head; 
 		}
-		//digitalWriteFast(5, LOW);
 	}
 	c = UART2_C2;
 	if ((c & UART_C2_TIE) && (UART2_S1 & UART_S1_TDRE)) {
-		//digitalWriteFast(5, HIGH);
 		head = tx_buffer_head;
 		tail = tx_buffer_tail;
 		if (head == tail) {
@@ -251,13 +290,12 @@ void uart2_status_isr(void)
 			UART2_D = n;
 			tx_buffer_tail = tail;
 		}
-		//digitalWriteFast(5, LOW);
 	}
 	if ((c & UART_C2_TCIE) && (UART2_S1 & UART_S1_TC)) {
 		transmitting = 0;
+		if (transmit_pin) transmit_deassert();
 		UART2_C2 = C2_TX_INACTIVE;
 	}
-	//digitalWriteFast(4, LOW);
 }
 
 

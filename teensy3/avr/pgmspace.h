@@ -1,3 +1,25 @@
+/* Simple compatibility headers for AVR code used with ARM chips
+ * Copyright (c) 2015 Paul Stoffregen <paul@pjrc.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 #ifndef __PGMSPACE_H_
 #define __PGMSPACE_H_ 1
 
@@ -38,19 +60,19 @@ typedef uint32_t prog_uint32_t;
 #define strncmp_P(a, b, n) strncmp((a), (b), (n))
 #define strncasecmp_P(a, b, n) strncasecmp((a), (b), (n))
 #define strncat_P(a, b, n) strncat((a), (b), (n))
-#define strncpy_P(a, b, n) strncmp((a), (b), (n))
+#define strncpy_P(a, b, n) strncpy((a), (b), (n))
 #define strpbrk_P(str, chrs) strpbrk((str), (chrs))
 #define strrchr_P(str, c) strrchr((str), (c))
 #define strsep_P(strp, delim) strsep((strp), (delim))
 #define strspn_P(str, chrs) strspn((str), (chrs))
 #define strstr_P(a, b) strstr((a), (b))
 #define sprintf_P(s, ...) sprintf((s), __VA_ARGS__)
-#define vfprintf_P(s, ...) vfprintf((s), __VA_ARGS__)
+#define vfprintf_P(fp, s, ...) vfprintf((fp), (s), __VA_ARGS__)
 #define printf_P(...) printf(__VA_ARGS__)
-#define snprintf_P(s, n, ...) ((s), (n), __VA_ARGS__)
-#define vsprintf_P(s, ...) ((s),__VA_ARGS__)
-#define vsnprintf_P(s, n, ...) ((s), (n),__VA_ARGS__)
-#define fprintf_P(s, ...) ((s), __VA_ARGS__)
+#define snprintf_P(s, n, ...) snprintf((s), (n), __VA_ARGS__)
+#define vsprintf_P(s, ...) vsprintf((s), __VA_ARGS__)
+#define vsnprintf_P(s, n, ...) vsnprintf((s), (n), __VA_ARGS__)
+#define fprintf_P(fp, ...) fprintf((fp), __VA_ARGS__)
 
 #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
 #define pgm_read_word(addr) (*(const unsigned short *)(addr))

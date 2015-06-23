@@ -20,20 +20,27 @@
  * THE SOFTWARE.
  */
 
-#ifndef _AVR_EEPROM_H_
-#define _AVR_EEPROM_H_ 1
+#ifndef _AVR_SLEEP_H_
+#define _AVR_SLEEP_H_ 1
 
-#include <stddef.h>
-#include <stdint.h>
+#define SLEEP_MODE_IDLE         0
+#define SLEEP_MODE_ADC		0
+#define SLEEP_MODE_PWR_DOWN	1
+#define SLEEP_MODE_PWR_SAVE	1
+#define SLEEP_MODE_STANDBY	1
+#define SLEEP_MODE_EXT_STANDBY	1
 
-#include "avr_functions.h"
+#define set_sleep_mode(mode)	// TODO: actually set the mode...
+#define sleep_enable()
+#define sleep_disable()
+#define sleep_cpu()		(asm("wfi"))
+#define sleep_bod_disable()
+#define sleep_mode()		sleep_cpu()
 
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
-  #define E2END 0x7FF
-#elif defined(__MKL26Z64__)
-  #define E2END 0x7F
-#else
-  #define E2END 0
-#endif
+// workaround for early versions of Nordic's BLE library
+// EIMSK moved to a dummy byte in avr_emulation...
+//#if defined(HAL_ACI_TL_H__) && defined(PLATFORM_H__)
+//#define EIMSK uint8_t EIMSKworkaround=0; EIMSKworkaround
+//#endif
 
 #endif

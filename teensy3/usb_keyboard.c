@@ -10,10 +10,10 @@
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  *
- * 1. The above copyright notice and this permission notice shall be 
+ * 1. The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * 2. If the Software is incorporated into a build system that allows 
+ * 2. If the Software is incorporated into a build system that allows
  * selection among a list of target devices, then similar target
  * devices manufactured by PJRC.COM must be included in the list of
  * target devices and selectable in the same manner.
@@ -36,7 +36,7 @@
 #include <string.h> // for memcpy()
 
 #ifdef KEYBOARD_INTERFACE // defined by usb_dev.h -> usb_desc.h
-
+#if F_CPU >= 20000000
 
 // which modifier keys are currently pressed
 // 1=left ctrl,	   2=left shift,   4=left alt,	  8=left gui
@@ -449,8 +449,16 @@ static uint8_t transmit_previous_timeout=0;
 // When the PC isn't listening, how long do we wait before discarding data?
 #define TX_TIMEOUT_MSEC 50
 
-#if F_CPU == 96000000
+#if F_CPU == 168000000
+  #define TX_TIMEOUT (TX_TIMEOUT_MSEC * 1100)
+#elif F_CPU == 144000000
+  #define TX_TIMEOUT (TX_TIMEOUT_MSEC * 932)
+#elif F_CPU == 120000000
+  #define TX_TIMEOUT (TX_TIMEOUT_MSEC * 764)
+#elif F_CPU == 96000000
   #define TX_TIMEOUT (TX_TIMEOUT_MSEC * 596)
+#elif F_CPU == 72000000
+  #define TX_TIMEOUT (TX_TIMEOUT_MSEC * 512)
 #elif F_CPU == 48000000
   #define TX_TIMEOUT (TX_TIMEOUT_MSEC * 428)
 #elif F_CPU == 24000000
@@ -500,4 +508,5 @@ int usb_keyboard_send(void)
 }
 
 
+#endif // F_CPU
 #endif // KEYBOARD_INTERFACE

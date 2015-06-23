@@ -10,10 +10,10 @@
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  *
- * 1. The above copyright notice and this permission notice shall be 
+ * 1. The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * 2. If the Software is incorporated into a build system that allows 
+ * 2. If the Software is incorporated into a build system that allows
  * selection among a list of target devices, then similar target
  * devices manufactured by PJRC.COM must be included in the list of
  * target devices and selectable in the same manner.
@@ -34,6 +34,7 @@
 #include <string.h>    // for memcpy()
 
 #ifdef FLIGHTSIM_INTERFACE // defined by usb_dev.h -> usb_desc.h
+#if F_CPU >= 20000000
 
 FlightSimCommand * FlightSimCommand::first = NULL;
 FlightSimCommand * FlightSimCommand::last = NULL;
@@ -227,6 +228,11 @@ FlightSimClass::FlightSimClass()
 void FlightSimClass::update(void)
 {
 	uint8_t len, maxlen, type, *p, *end;
+	union {
+		uint8_t b[4];
+		long l;
+		float f;
+	} data;
 	usb_packet_t *rx_packet;
 	uint16_t id;
 
@@ -248,11 +254,27 @@ void FlightSimClass::update(void)
 				if (type == 1) {
 					FlightSimInteger *item = FlightSimInteger::find(id);
 					if (!item) break;
-					item->update(*(long *)(p + 6));
+					#ifdef KINETISK
+					data.l = *(long *)(p + 6);
+					#else
+					data.b[0] = p[6];
+					data.b[1] = p[7];
+					data.b[2] = p[8];
+					data.b[3] = p[9];
+					#endif
+					item->update(data.l);
 				} else if (type == 2) {
 					FlightSimFloat *item = FlightSimFloat::find(id);
 					if (!item) break;
-					item->update(*(float *)(p + 6));
+					#ifdef KINETISK
+					data.f = *(float *)(p + 6);
+					#else
+					data.b[0] = p[6];
+					data.b[1] = p[7];
+					data.b[2] = p[8];
+					data.b[3] = p[9];
+					#endif
+					item->update(data.f);
 				}
 				break;
 			  case 0x03: // enable/disable
@@ -355,7 +377,7 @@ extern "C" {
 void usb_flightsim_flush_callback(void)
 {
 	if (tx_noautoflush || !tx_packet || tx_packet->index == 0) return;
-	for (int i=tx_packet->index; i < FLIGHTSIM_TX_ENDPOINT; i++) {
+	for (int i=tx_packet->index; i < FLIGHTSIM_TX_SIZE; i++) {
 		tx_packet->buf[i] = 0;
 	}
 	tx_packet->len = FLIGHTSIM_TX_SIZE;
@@ -364,4 +386,5 @@ void usb_flightsim_flush_callback(void)
 }
 }
 
+#endif // F_CPU
 #endif // FLIGHTSIM_INTERFACE

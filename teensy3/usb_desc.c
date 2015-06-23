@@ -10,10 +10,10 @@
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  *
- * 1. The above copyright notice and this permission notice shall be 
+ * 1. The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * 2. If the Software is incorporated into a build system that allows 
+ * 2. If the Software is incorporated into a build system that allows
  * selection among a list of target devices, then similar target
  * devices manufactured by PJRC.COM must be included in the list of
  * target devices and selectable in the same manner.
@@ -28,9 +28,13 @@
  * SOFTWARE.
  */
 
+#if F_CPU >= 20000000
+
+#define USB_DESC_LIST_DEFINE
 #include "usb_desc.h"
+#ifdef NUM_ENDPOINTS
 #include "usb_names.h"
-#include "mk20dx128.h"
+#include "kinetis.h"
 #include "avr_functions.h"
 
 // USB Descriptors are binary data which the USB host reads to
@@ -158,17 +162,29 @@ static uint8_t mouse_report_desc[] = {
         0x05, 0x01,                     // Usage Page (Generic Desktop)
         0x09, 0x02,                     // Usage (Mouse)
         0xA1, 0x01,                     // Collection (Application)
+        0x85, 0x01,                     //   REPORT_ID (1)
         0x05, 0x09,                     //   Usage Page (Button)
         0x19, 0x01,                     //   Usage Minimum (Button #1)
-        0x29, 0x03,                     //   Usage Maximum (Button #3)
+        0x29, 0x08,                     //   Usage Maximum (Button #8)
         0x15, 0x00,                     //   Logical Minimum (0)
         0x25, 0x01,                     //   Logical Maximum (1)
-        0x95, 0x03,                     //   Report Count (3)
+        0x95, 0x08,                     //   Report Count (8)
         0x75, 0x01,                     //   Report Size (1)
         0x81, 0x02,                     //   Input (Data, Variable, Absolute)
-        0x95, 0x01,                     //   Report Count (1)
-        0x75, 0x05,                     //   Report Size (5)
-        0x81, 0x03,                     //   Input (Constant)
+        0x05, 0x01,                     //   Usage Page (Generic Desktop)
+        0x09, 0x30,                     //   Usage (X)
+        0x09, 0x31,                     //   Usage (Y)
+        0x09, 0x38,                     //   Usage (Wheel)
+        0x15, 0x81,                     //   Logical Minimum (-127)
+        0x25, 0x7F,                     //   Logical Maximum (127)
+        0x75, 0x08,                     //   Report Size (8),
+        0x95, 0x03,                     //   Report Count (3),
+        0x81, 0x06,                     //   Input (Data, Variable, Relative)
+        0xC0,                           // End Collection
+        0x05, 0x01,                     // Usage Page (Generic Desktop)
+        0x09, 0x02,                     // Usage (Mouse)
+        0xA1, 0x01,                     // Collection (Application)
+        0x85, 0x02,                     //   REPORT_ID (2)
         0x05, 0x01,                     //   Usage Page (Generic Desktop)
         0x09, 0x30,                     //   Usage (X)
         0x09, 0x31,                     //   Usage (Y)
@@ -177,12 +193,6 @@ static uint8_t mouse_report_desc[] = {
         0x75, 0x10,                     //   Report Size (16),
         0x95, 0x02,                     //   Report Count (2),
         0x81, 0x02,                     //   Input (Data, Variable, Absolute)
-        0x09, 0x38,                     //   Usage (Wheel)
-        0x15, 0x81,                     //   Logical Minimum (-127)
-        0x25, 0x7F,                     //   Logical Maximum (127)
-        0x75, 0x08,                     //   Report Size (8),
-        0x95, 0x01,                     //   Report Count (1),
-        0x81, 0x06,                     //   Input (Data, Variable, Relative)
         0xC0                            // End Collection
 };
 #endif
@@ -290,6 +300,86 @@ static uint8_t flightsim_report_desc[] = {
         0xC0                                    // end collection
 };
 #endif
+
+
+// **************************************************************
+//   USB Descriptor Sizes
+// **************************************************************
+
+// pre-compute the size and position of everything in the config descriptor
+//
+#define CONFIG_HEADER_DESCRIPTOR_SIZE	9
+
+#define CDC_IAD_DESCRIPTOR_POS		CONFIG_HEADER_DESCRIPTOR_SIZE
+#ifdef  CDC_IAD_DESCRIPTOR
+#define CDC_IAD_DESCRIPTOR_SIZE		8
+#else
+#define CDC_IAD_DESCRIPTOR_SIZE		0
+#endif
+
+#define CDC_DATA_INTERFACE_DESC_POS	CDC_IAD_DESCRIPTOR_POS+CDC_IAD_DESCRIPTOR_SIZE
+#ifdef  CDC_DATA_INTERFACE
+#define CDC_DATA_INTERFACE_DESC_SIZE	9+5+5+4+5+7+9+7+7
+#else
+#define CDC_DATA_INTERFACE_DESC_SIZE	0
+#endif
+
+#define MIDI_INTERFACE_DESC_POS		CDC_DATA_INTERFACE_DESC_POS+CDC_DATA_INTERFACE_DESC_SIZE
+#ifdef  MIDI_INTERFACE
+#define MIDI_INTERFACE_DESC_SIZE	9+7+6+6+9+9+9+5+9+5
+#else
+#define MIDI_INTERFACE_DESC_SIZE	0
+#endif
+
+#define KEYBOARD_INTERFACE_DESC_POS	MIDI_INTERFACE_DESC_POS+MIDI_INTERFACE_DESC_SIZE
+#ifdef  KEYBOARD_INTERFACE
+#define KEYBOARD_INTERFACE_DESC_SIZE	9+9+7
+#define KEYBOARD_HID_DESC_OFFSET	KEYBOARD_INTERFACE_DESC_POS+9
+#else
+#define KEYBOARD_INTERFACE_DESC_SIZE	0
+#endif
+
+#define MOUSE_INTERFACE_DESC_POS	KEYBOARD_INTERFACE_DESC_POS+KEYBOARD_INTERFACE_DESC_SIZE
+#ifdef  MOUSE_INTERFACE
+#define MOUSE_INTERFACE_DESC_SIZE	9+9+7
+#define MOUSE_HID_DESC_OFFSET		MOUSE_INTERFACE_DESC_POS+9
+#else
+#define MOUSE_INTERFACE_DESC_SIZE	0
+#endif
+
+#define RAWHID_INTERFACE_DESC_POS	MOUSE_INTERFACE_DESC_POS+MOUSE_INTERFACE_DESC_SIZE
+#ifdef  RAWHID_INTERFACE
+#define RAWHID_INTERFACE_DESC_SIZE	9+9+7+7
+#define RAWHID_HID_DESC_OFFSET		RAWHID_INTERFACE_DESC_POS+9
+#else
+#define RAWHID_INTERFACE_DESC_SIZE	0
+#endif
+
+#define FLIGHTSIM_INTERFACE_DESC_POS	RAWHID_INTERFACE_DESC_POS+RAWHID_INTERFACE_DESC_SIZE
+#ifdef  FLIGHTSIM_INTERFACE
+#define FLIGHTSIM_INTERFACE_DESC_SIZE	9+9+7+7
+#define FLIGHTSIM_HID_DESC_OFFSET	FLIGHTSIM_INTERFACE_DESC_POS+9
+#else
+#define FLIGHTSIM_INTERFACE_DESC_SIZE	0
+#endif
+
+#define SEREMU_INTERFACE_DESC_POS	FLIGHTSIM_INTERFACE_DESC_POS+FLIGHTSIM_INTERFACE_DESC_SIZE
+#ifdef  SEREMU_INTERFACE
+#define SEREMU_INTERFACE_DESC_SIZE	9+9+7+7
+#define SEREMU_HID_DESC_OFFSET		SEREMU_INTERFACE_DESC_POS+9
+#else
+#define SEREMU_INTERFACE_DESC_SIZE	0
+#endif
+
+#define JOYSTICK_INTERFACE_DESC_POS	SEREMU_INTERFACE_DESC_POS+SEREMU_INTERFACE_DESC_SIZE
+#ifdef  JOYSTICK_INTERFACE
+#define JOYSTICK_INTERFACE_DESC_SIZE	9+9+7
+#define JOYSTICK_HID_DESC_OFFSET	JOYSTICK_INTERFACE_DESC_POS+9
+#else
+#define JOYSTICK_INTERFACE_DESC_SIZE	0
+#endif
+
+#define CONFIG_DESC_SIZE		JOYSTICK_INTERFACE_DESC_POS+JOYSTICK_INTERFACE_DESC_SIZE
 
 
 
@@ -403,7 +493,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         // MIDI MS Interface Header, USB MIDI 6.1.2.1, page 21, Table 6-2
         7,                                      // bLength
         0x24,                                   // bDescriptorType = CS_INTERFACE
-        0x01,                                   // bDescriptorSubtype = MS_HEADER 
+        0x01,                                   // bDescriptorSubtype = MS_HEADER
         0x00, 0x01,                             // bcdMSC = revision 01.00
         0x41, 0x00,                             // wTotalLength
         // MIDI IN Jack Descriptor, B.4.3, Table B-7 (embedded), page 40
@@ -442,7 +532,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         0,                                      // iJack
         // Standard Bulk OUT Endpoint Descriptor, B.5.1, Table B-11, pae 42
         9,                                      // bLength
-        5,                                      // bDescriptorType = ENDPOINT 
+        5,                                      // bDescriptorType = ENDPOINT
         MIDI_RX_ENDPOINT,                       // bEndpointAddress
         0x02,                                   // bmAttributes (0x02=bulk)
         MIDI_RX_SIZE, 0,                        // wMaxPacketSize
@@ -457,7 +547,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         1,                                      // BaAssocJackID(1) = jack ID #1
         // Standard Bulk IN Endpoint Descriptor, B.5.1, Table B-11, pae 42
         9,                                      // bLength
-        5,                                      // bDescriptorType = ENDPOINT 
+        5,                                      // bDescriptorType = ENDPOINT
         MIDI_TX_ENDPOINT | 0x80,                // bEndpointAddress
         0x02,                                   // bmAttributes (0x02=bulk)
         MIDI_TX_SIZE, 0,                        // wMaxPacketSize
@@ -728,6 +818,8 @@ void usb_init_serialnumber(void)
 	while (!(FTFL_FSTAT & FTFL_FSTAT_CCIF)) ; // wait
 	num = *(uint32_t *)&FTFL_FCCOB7;
 	__enable_irq();
+	// add extra zero to work around OS-X CDC-ACM driver bug
+	if (num < 10000000) num = num * 10;
 	ultoa(num, buf, 10);
 	for (i=0; i<10; i++) {
 		char c = buf[i];
@@ -750,35 +842,32 @@ const usb_descriptor_list_t usb_descriptor_list[] = {
 	{0x0200, 0x0000, config_descriptor, sizeof(config_descriptor)},
 #ifdef SEREMU_INTERFACE
 	{0x2200, SEREMU_INTERFACE, seremu_report_desc, sizeof(seremu_report_desc)},
-	{0x2100, SEREMU_INTERFACE, config_descriptor+SEREMU_DESC_OFFSET, 9},
+	{0x2100, SEREMU_INTERFACE, config_descriptor+SEREMU_HID_DESC_OFFSET, 9},
 #endif
 #ifdef KEYBOARD_INTERFACE
         {0x2200, KEYBOARD_INTERFACE, keyboard_report_desc, sizeof(keyboard_report_desc)},
-        {0x2100, KEYBOARD_INTERFACE, config_descriptor+KEYBOARD_DESC_OFFSET, 9},
+        {0x2100, KEYBOARD_INTERFACE, config_descriptor+KEYBOARD_HID_DESC_OFFSET, 9},
 #endif
 #ifdef MOUSE_INTERFACE
         {0x2200, MOUSE_INTERFACE, mouse_report_desc, sizeof(mouse_report_desc)},
-        {0x2100, MOUSE_INTERFACE, config_descriptor+MOUSE_DESC_OFFSET, 9},
+        {0x2100, MOUSE_INTERFACE, config_descriptor+MOUSE_HID_DESC_OFFSET, 9},
 #endif
 #ifdef JOYSTICK_INTERFACE
         {0x2200, JOYSTICK_INTERFACE, joystick_report_desc, sizeof(joystick_report_desc)},
-        {0x2100, JOYSTICK_INTERFACE, config_descriptor+JOYSTICK_DESC_OFFSET, 9},
+        {0x2100, JOYSTICK_INTERFACE, config_descriptor+JOYSTICK_HID_DESC_OFFSET, 9},
 #endif
 #ifdef RAWHID_INTERFACE
 	{0x2200, RAWHID_INTERFACE, rawhid_report_desc, sizeof(rawhid_report_desc)},
-	{0x2100, RAWHID_INTERFACE, config_descriptor+RAWHID_DESC_OFFSET, 9},
+	{0x2100, RAWHID_INTERFACE, config_descriptor+RAWHID_HID_DESC_OFFSET, 9},
 #endif
 #ifdef FLIGHTSIM_INTERFACE
 	{0x2200, FLIGHTSIM_INTERFACE, flightsim_report_desc, sizeof(flightsim_report_desc)},
-	{0x2100, FLIGHTSIM_INTERFACE, config_descriptor+FLIGHTSIM_DESC_OFFSET, 9},
+	{0x2100, FLIGHTSIM_INTERFACE, config_descriptor+FLIGHTSIM_HID_DESC_OFFSET, 9},
 #endif
         {0x0300, 0x0000, (const uint8_t *)&string0, 0},
         {0x0301, 0x0409, (const uint8_t *)&usb_string_manufacturer_name, 0},
         {0x0302, 0x0409, (const uint8_t *)&usb_string_product_name, 0},
         {0x0303, 0x0409, (const uint8_t *)&usb_string_serial_number, 0},
-        //{0x0301, 0x0409, (const uint8_t *)&string1, 0},
-        //{0x0302, 0x0409, (const uint8_t *)&string2, 0},
-        //{0x0303, 0x0409, (const uint8_t *)&string3, 0},
 	{0, 0, NULL, 0}
 };
 
@@ -792,16 +881,16 @@ const usb_descriptor_list_t usb_descriptor_list[] = {
 // 0x19 = Recieve only
 // 0x15 = Transmit only
 // 0x1D = Transmit & Recieve
-// 
-const uint8_t usb_endpoint_config_table[NUM_ENDPOINTS] = 
+//
+const uint8_t usb_endpoint_config_table[NUM_ENDPOINTS] =
 {
-	0x00, 0x15, 0x19, 0x15, 0x00, 0x00, 0x00, 0x00, 
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x15, 0x19, 0x15, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 #endif
 
 
-const uint8_t usb_endpoint_config_table[NUM_ENDPOINTS] = 
+const uint8_t usb_endpoint_config_table[NUM_ENDPOINTS] =
 {
 #if (defined(ENDPOINT1_CONFIG) && NUM_ENDPOINTS >= 1)
 	ENDPOINT1_CONFIG,
@@ -881,5 +970,5 @@ const uint8_t usb_endpoint_config_table[NUM_ENDPOINTS] =
 };
 
 
-
-
+#endif // NUM_ENDPOINTS
+#endif // F_CPU >= 20 MHz

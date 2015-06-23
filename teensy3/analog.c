@@ -41,66 +41,120 @@ static uint8_t analog_reference_internal = 0;
 // datasheet says ADC clock should be 2 to 12 MHz for 16 bit mode
 // datasheet says ADC clock should be 1 to 18 MHz for 8-12 bit mode
 
-#if F_BUS == 48000000
-  #define ADC_CFG1_6MHZ   ADC_CFG1_ADIV(2) + ADC_CFG1_ADICLK(1)
-  #define ADC_CFG1_12MHZ  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1)
-  #define ADC_CFG1_24MHZ  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(1)
+#if F_BUS == 60000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(2) + ADC_CFG1_ADICLK(1) // 7.5 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 15 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 15 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 15 MHz
+#elif F_BUS == 56000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(2) + ADC_CFG1_ADICLK(1) // 7 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 14 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 14 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 14 MHz
+#elif F_BUS == 48000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 12 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 12 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 12 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(1) // 24 MHz
+#elif F_BUS == 40000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 10 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 10 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 10 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(1) // 20 MHz
+#elif F_BUS == 36000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(1) // 9 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(1) // 18 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(1) // 18 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(1) // 18 MHz
 #elif F_BUS == 24000000
-  #define ADC_CFG1_6MHZ   ADC_CFG1_ADIV(2) + ADC_CFG1_ADICLK(0)
-  #define ADC_CFG1_12MHZ  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(0)
-  #define ADC_CFG1_24MHZ  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0)
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(0) // 12 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(0) // 12 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(1) + ADC_CFG1_ADICLK(0) // 12 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 24 MHz
+#elif F_BUS == 16000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 8 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 8 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 8 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 16 MHz
+#elif F_BUS == 8000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 8 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 8 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 8 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 8 MHz
+#elif F_BUS == 4000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 4 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 4 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 4 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 4 MHz
+#elif F_BUS == 2000000
+  #define ADC_CFG1_16BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 2 MHz
+  #define ADC_CFG1_12BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 2 MHz
+  #define ADC_CFG1_10BIT  ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 2 MHz
+  #define ADC_CFG1_8BIT   ADC_CFG1_ADIV(0) + ADC_CFG1_ADICLK(0) // 2 MHz
 #else
-#error
+#error "F_BUS must be 60, 56, 48, 40, 36, 24, 4 or 2 MHz"
 #endif
 
 void analog_init(void)
 {
 	uint32_t num;
 
+	#if defined(__MK20DX128__) || defined(__MK20DX256__)
 	VREF_TRM = 0x60;
 	VREF_SC = 0xE1;		// enable 1.2 volt ref
+	#endif
 
 	if (analog_config_bits == 8) {
-		ADC0_CFG1 = ADC_CFG1_24MHZ + ADC_CFG1_MODE(0);
+		ADC0_CFG1 = ADC_CFG1_8BIT + ADC_CFG1_MODE(0);
 		ADC0_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(3);
 		#if defined(__MK20DX256__)
-		ADC1_CFG1 = ADC_CFG1_24MHZ + ADC_CFG1_MODE(0);
+		ADC1_CFG1 = ADC_CFG1_8BIT + ADC_CFG1_MODE(0);
 		ADC1_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(3);
 		#endif
 	} else if (analog_config_bits == 10) {
-		ADC0_CFG1 = ADC_CFG1_12MHZ + ADC_CFG1_MODE(2) + ADC_CFG1_ADLSMP;
+		ADC0_CFG1 = ADC_CFG1_10BIT + ADC_CFG1_MODE(2) + ADC_CFG1_ADLSMP;
 		ADC0_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(3);
 		#if defined(__MK20DX256__)
-		ADC1_CFG1 = ADC_CFG1_12MHZ + ADC_CFG1_MODE(2) + ADC_CFG1_ADLSMP;
+		ADC1_CFG1 = ADC_CFG1_10BIT + ADC_CFG1_MODE(2) + ADC_CFG1_ADLSMP;
 		ADC1_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(3);
 		#endif
 	} else if (analog_config_bits == 12) {
-		ADC0_CFG1 = ADC_CFG1_12MHZ + ADC_CFG1_MODE(1) + ADC_CFG1_ADLSMP;
+		ADC0_CFG1 = ADC_CFG1_12BIT + ADC_CFG1_MODE(1) + ADC_CFG1_ADLSMP;
 		ADC0_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(2);
 		#if defined(__MK20DX256__)
-		ADC1_CFG1 = ADC_CFG1_12MHZ + ADC_CFG1_MODE(1) + ADC_CFG1_ADLSMP;
+		ADC1_CFG1 = ADC_CFG1_12BIT + ADC_CFG1_MODE(1) + ADC_CFG1_ADLSMP;
 		ADC1_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(2);
 		#endif
 	} else {
-		ADC0_CFG1 = ADC_CFG1_12MHZ + ADC_CFG1_MODE(3) + ADC_CFG1_ADLSMP;
+		ADC0_CFG1 = ADC_CFG1_16BIT + ADC_CFG1_MODE(3) + ADC_CFG1_ADLSMP;
 		ADC0_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(2);
 		#if defined(__MK20DX256__)
-		ADC1_CFG1 = ADC_CFG1_12MHZ + ADC_CFG1_MODE(3) + ADC_CFG1_ADLSMP;
+		ADC1_CFG1 = ADC_CFG1_16BIT + ADC_CFG1_MODE(3) + ADC_CFG1_ADLSMP;
 		ADC1_CFG2 = ADC_CFG2_MUXSEL + ADC_CFG2_ADLSTS(2);
 		#endif
 	}
 
+	#if defined(__MK20DX128__)
 	if (analog_reference_internal) {
 		ADC0_SC2 = ADC_SC2_REFSEL(1); // 1.2V ref
-		#if defined(__MK20DX256__)
-		ADC1_SC2 = ADC_SC2_REFSEL(1); // 1.2V ref
-		#endif
 	} else {
 		ADC0_SC2 = ADC_SC2_REFSEL(0); // vcc/ext ref
-		#if defined(__MK20DX256__)
-		ADC1_SC2 = ADC_SC2_REFSEL(0); // vcc/ext ref
-		#endif
 	}
+	#elif defined(__MK20DX256__)
+	if (analog_reference_internal) {
+		ADC0_SC2 = ADC_SC2_REFSEL(1); // 1.2V ref
+		ADC1_SC2 = ADC_SC2_REFSEL(1); // 1.2V ref
+	} else {
+		ADC0_SC2 = ADC_SC2_REFSEL(0); // vcc/ext ref
+		ADC1_SC2 = ADC_SC2_REFSEL(0); // vcc/ext ref
+	}
+	#elif defined(__MKL26Z64__)
+	if (analog_reference_internal) {
+		ADC0_SC2 = ADC_SC2_REFSEL(0); // external AREF
+	} else {
+		ADC0_SC2 = ADC_SC2_REFSEL(1); // vcc
+	}
+	#endif
 
 	num = analog_num_average;
 	if (num <= 1) {
@@ -178,12 +232,18 @@ static void wait_for_cal(void)
 //   VREFH/VREFL - connected as the primary reference option
 //   1.2 V VREF_OUT - connected as the VALT reference option
 
-
+#if defined(__MK20DX128__) || defined(__MK20DX256__)
 #define DEFAULT         0
 #define INTERNAL        2
 #define INTERNAL1V2     2
 #define INTERNAL1V1     2
 #define EXTERNAL        0
+
+#elif defined(__MKL26Z64__)
+#define DEFAULT         0
+#define INTERNAL        0
+#define EXTERNAL        1
+#endif
 
 void analogReference(uint8_t type)
 {
@@ -279,6 +339,13 @@ static const uint8_t channel2sc1a[] = {
 // A19  30   C11  ADC1_SE7b  7
 // A20  31   E0   ADC1_SE4a  4+64
 };
+#elif defined(__MKL26Z64__)
+static const uint8_t channel2sc1a[] = {
+	5, 14, 8, 9, 13, 12, 6, 7, 15, 11,
+	0, 4+64, 23, 26, 27
+};
+
+
 #endif
 
 
@@ -297,20 +364,43 @@ int analogRead(uint8_t pin)
 	//serial_phex(pin);
 	//serial_print(" ");
 
+#if defined(__MK20DX128__)
 	if (pin <= 13) {
 		index = pin;      // 0-13 refer to A0-A13
 	} else if (pin <= 23) {
 		index = pin - 14; // 14-23 are A0-A9
-#if defined(__MK20DX256__)
+	} else if (pin >= 34 && pin <= 40) {
+		index = pin - 24; // 34-37 are A10-A13, 38 is temp sensor,
+			          // 39 is vref, 40 is unused analog pin
+	} else {
+		return 0;
+	}
+#elif defined(__MK20DX256__)
+	if (pin <= 13) {
+		index = pin;      // 0-13 refer to A0-A13
+	} else if (pin <= 23) {
+		index = pin - 14; // 14-23 are A0-A9
 	} else if (pin >= 26 && pin <= 31) {
 		index = pin - 9;  // 26-31 are A15-A20
-#endif
 	} else if (pin >= 34 && pin <= 40) {
-		index = pin - 24;  // 34-37 are A10-A13, 38 is temp sensor,
-			    // 39 is vref, 40 is unused (A14 on Teensy 3.1)
+		index = pin - 24; // 34-37 are A10-A13, 38 is temp sensor,
+			          // 39 is vref, 40 is A14
 	} else {
-		return 0;   // all others are invalid
+		return 0;
 	}
+#elif defined(__MKL26Z64__)
+	if (pin <= 12) {
+		index = pin;      // 0-12 refer to A0-A12
+	} else if (pin >= 14 && pin <= 26) {
+		index = pin - 14; // 14-26 are A0-A12
+	} else if (pin >= 38 && pin <= 39) {
+		index = pin - 25; // 38=temperature
+		                  // 39=bandgap ref (PMC_REGSC |= PMC_REGSC_BGBE)
+	} else {
+		return 0;
+	}
+
+#endif
 
 	//serial_phex(index);
 	//serial_print(" ");
@@ -331,6 +421,14 @@ int analogRead(uint8_t pin)
 	__disable_irq();
 startADC0:
 	//serial_print("startADC0\n");
+#if defined(__MKL26Z64__)
+	if (channel & 0x40) {
+		ADC0_CFG2 &= ~ADC_CFG2_MUXSEL;
+		channel &= 0x3F;
+	} else {
+		ADC0_CFG2 |= ADC_CFG2_MUXSEL;
+	}
+#endif
 	ADC0_SC1A = channel;
 	analogReadBusyADC0 = 1;
 	__enable_irq();
@@ -398,9 +496,20 @@ void analogWriteDAC0(int val)
 	if (val < 0) val = 0;  // TODO: saturate instruction?
 	else if (val > 4095) val = 4095;
 	*(int16_t *)&(DAC0_DAT0L) = val;
+#elif defined(__MKL26Z64__)
+	SIM_SCGC6 |= SIM_SCGC6_DAC0;
+	if (analog_reference_internal == 0) {
+		// use 3.3V VDDA power as the reference (this is the default)
+		DAC0_C0 = DAC_C0_DACEN | DAC_C0_DACRFS | DAC_C0_DACSWTRG; // 3.3V VDDA
+	} else {
+		// use whatever voltage is on the AREF pin
+		DAC0_C0 = DAC_C0_DACEN | DAC_C0_DACSWTRG; // 3.3V VDDA
+	}
+	if (val < 0) val = 0;
+	else if (val > 4095) val = 4095;
+	*(int16_t *)&(DAC0_DAT0L) = val;
 #endif
 }
-
 
 
 
