@@ -31,7 +31,7 @@ ifeq ($(OS),Windows_NT)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
-        TOOLSPATH = /Applications/Arduino.app/Contents/Java/hardware/tools/arm/
+        TOOLSPATH = /Applications/Arduino.app/Contents/Java/hardware/tools/
     endif
 endif
 
@@ -43,7 +43,7 @@ LIBRARYPATH = libraries
 
 # path location for the arm-none-eabi compiler
 ifeq ($(UNAME_S),Darwin)
-	COMPILERPATH = $(TOOLSPATH)/bin
+	COMPILERPATH = $(TOOLSPATH)/arm/bin
 else
 	COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
 endif
