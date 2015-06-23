@@ -5,46 +5,6 @@
 
 _BEGIN_STD_C
 
-  /* Indicate that we honor AEABI portability if requested.  */
-#if defined _AEABI_PORTABILITY_LEVEL && _AEABI_PORTABILITY_LEVEL != 0 && !defined _AEABI_PORTABLE
-# define _AEABI_PORTABLE
-#endif
-
-#if defined _AEABI_PORTABLE
-extern unsigned char _CONST __aebi_ctype_table_C[257];
-extern unsigned char _CONST __aebi_ctype_table_[257];
-
-# ifdef _AEABI_LC_CTYPE
-#  define _AEABI_CTYPE_TABLE(_X) __aebi_ctype_table_ ## _X
-#  define _AEABI_CTYPE(_X) _AEABI_CTYPE_TABLE(_X)
-#  define __aeabi_ctype_table _AEABI_CTYPE (_AEABI_LC_CTYPE)
-# else
-#  define __aeabi_ctype_table __aeabi_ctype_table_
-# endif /* _AEABI_LC_CTYPE */
-
-#define _AEABI_A	1	/* Alphabetic.  */
-#define _AEABI_X	2	/* A-F a-f 0-9. */
-#define _AEABI_P	4	/* Punctuation.  */
-#define _AEABI_B	8	/* Printable blank.  */
-#define _AEABI_S	16	/* Whitespace.  */
-#define _AEABI_L	32	/* Lower case letter.  */
-#define _AEABI_U	64	/* Upper case letter.  */
-#define _AEABI_C	128	/* Control chars.  */
-
-#define isspace(x)	((__aeabi_ctype_table+1)[x] & _AEABI_S)
-#define isalpha(x)	((__aeabi_ctype_table+1)[x] & _AEABI_A)
-#define isalnum(x)	((__aeabi_ctype_table+1)[x] << 30)
-#define isprint(x)	((__aeabi_ctype_table+1)[x] << 28)
-#define isupper(x)	((__aeabi_ctype_table+1)[x] & _AEABI_U)
-#define islower(x)	((__aeabi_ctype_table+1)[x] & _AEABI_L)
-#define isxdigit(x)	((__aeabi_ctype_table+1)[x] & _AEABI_X)
-/* isblank */
-#define isgraph(x)	((__aeabi_ctype_table+1)[x] << 29)
-#define iscntrl(x)	((__aeabi_ctype_table+1)[x] & _AEABI_C)
-#define ispunct(x)	((__aeabi_ctype_table+1)[x] & _AEABI_P)
-
-#else
-
 int _EXFUN(isalnum, (int __c));
 int _EXFUN(isalpha, (int __c));
 int _EXFUN(iscntrl, (int __c));
@@ -59,11 +19,11 @@ int _EXFUN(isxdigit,(int __c));
 int _EXFUN(tolower, (int __c));
 int _EXFUN(toupper, (int __c));
 
-#if (!defined __STRICT_ANSI__ && !defined _AEABI_PORTABLE) || defined(__cplusplus) || __STDC_VERSION__ >= 199901L
+#if !defined(__STRICT_ANSI__) || defined(__cplusplus) || __STDC_VERSION__ >= 199901L
 int _EXFUN(isblank, (int __c));
 #endif
 
-#if !defined __STRICT_ANSI__ && !defined _AEABI_PORTABLE
+#ifndef __STRICT_ANSI__
 int _EXFUN(isascii, (int __c));
 int _EXFUN(toascii, (int __c));
 #define _tolower(__c) ((unsigned char)(__c) - 'A' + 'a')
@@ -140,12 +100,10 @@ extern	__IMPORT char	*__ctype_ptr__;
 # endif /* __GNUC__ */
 #endif /* !__cplusplus */
 
-#if !defined __STRICT_ANSI__ && !defined _AEABI_PORTABLE
+#ifndef __STRICT_ANSI__
 #define isascii(__c)	((unsigned)(__c)<=0177)
 #define toascii(__c)	((__c)&0177)
 #endif
-
-#endif /* _AEABI_PORTABLE */
 
 /* For C++ backward-compatibility only.  */
 extern	__IMPORT _CONST char	_ctype_[];

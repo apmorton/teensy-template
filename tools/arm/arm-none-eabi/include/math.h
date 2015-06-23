@@ -2,11 +2,6 @@
 
 #define  _MATH_H_
 
-  /* Indicate that we honor AEABI portability if requested.  */
-#if defined _AEABI_PORTABILITY_LEVEL && _AEABI_PORTABILITY_LEVEL != 0 && !defined _AEABI_PORTABLE
-# define _AEABI_PORTABLE
-#endif
-
 #include <sys/reent.h>
 #include <machine/ieeefp.h>
 #include "_ansi.h"
@@ -37,12 +32,9 @@ union __ldmath
 #endif
 
 /* Natural log of 2 */
-#define _M_LOG2_E        0.693147180559945309417
+#define _M_LN2        0.693147180559945309417
 
-#if defined(__GNUC__) && \
-  ( (__GNUC__ >= 4) || \
-    ( (__GNUC__ >= 3) && defined(__GNUC_MINOR__) && (__GNUC_MINOR__ >= 3) ) )
-
+#if __GNUC_PREREQ (3, 3)
  /* gcc >= 3.3 implicitly defines builtins for HUGE_VALx values.  */
 
 # ifndef HUGE_VAL
@@ -148,11 +140,37 @@ extern double fmod _PARAMS((double, double));
 
 /* ISO C99 types and macros. */
 
-#ifndef FLT_EVAL_METHOD
-#define FLT_EVAL_METHOD 0
-typedef float float_t;
-typedef double double_t;
+/* FIXME:  FLT_EVAL_METHOD should somehow be gotten from float.h (which is hard,
+ * considering that the standard says the includes it defines should not
+ * include other includes that it defines) and that value used.  (This can be
+ * solved, but autoconf has a bug which makes the solution more difficult, so
+ * it has been skipped for now.)  */
+#if !defined(FLT_EVAL_METHOD) && defined(__FLT_EVAL_METHOD__)
+  #define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
+  #define __TMP_FLT_EVAL_METHOD
 #endif /* FLT_EVAL_METHOD */
+#if defined FLT_EVAL_METHOD
+  #if FLT_EVAL_METHOD == 0
+    typedef float  float_t;
+    typedef double double_t;
+   #elif FLT_EVAL_METHOD == 1
+    typedef double float_t;
+    typedef double double_t;
+   #elif FLT_EVAL_METHOD == 2
+    typedef long double float_t;
+    typedef long double double_t;
+   #else
+    /* Implementation-defined.  Assume float_t and double_t have been
+     * defined previously for this configuration (e.g. config.h). */
+  #endif
+#else
+    /* Assume basic definitions.  */
+    typedef float  float_t;
+    typedef double double_t;
+#endif
+#if defined(__TMP_FLT_EVAL_METHOD)
+  #undef FLT_EVAL_METHOD
+#endif
 
 #define FP_NAN         0
 #define FP_INFINITE    1
@@ -281,7 +299,7 @@ extern double erf _PARAMS((double));
 extern double erfc _PARAMS((double));
 extern double log2 _PARAMS((double));
 #if !defined(__cplusplus)
-#define log2(x) (log (x) / _M_LOG2_E)
+#define log2(x) (log (x) / _M_LN2)
 #endif
 
 #ifndef __math_68881
@@ -360,9 +378,6 @@ extern float lgammaf _PARAMS((float));
 extern float erff _PARAMS((float));
 extern float erfcf _PARAMS((float));
 extern float log2f _PARAMS((float));
-#if !defined(__cplusplus)
-#define log2f(x) (logf (x) / (float) _M_LOG2_E)
-#endif
 extern float hypotf _PARAMS((float, float));
 #endif /* ! defined (_REENT_ONLY) */
 
@@ -375,7 +390,7 @@ extern long double cosl _PARAMS((long double));
 extern long double sinl _PARAMS((long double));
 extern long double tanl _PARAMS((long double));
 extern long double tanhl _PARAMS((long double));
-extern long double frexpl _PARAMS((long double, int *));
+extern long double frexpl _PARAMS((long double value, int *));
 extern long double modfl _PARAMS((long double, long double *));
 extern long double ceill _PARAMS((long double));
 extern long double fabsl _PARAMS((long double));
@@ -445,7 +460,6 @@ extern _LONG_LONG_TYPE llrintl _PARAMS((_LONG_DOUBLE));
 
 #if !defined (__STRICT_ANSI__) || defined(__cplusplus)
 
-extern double cabs();
 extern double drem _PARAMS((double, double));
 extern void sincos _PARAMS((double, double *, double *));
 extern double gamma_r _PARAMS((double, int *));
@@ -458,7 +472,6 @@ extern double j0 _PARAMS((double));
 extern double j1 _PARAMS((double));
 extern double jn _PARAMS((int, double));
 
-extern float cabsf();
 extern float dremf _PARAMS((float, float));
 extern void sincosf _PARAMS((float, float *, float *));
 extern float gammaf_r _PARAMS((float, int *));
@@ -536,7 +549,7 @@ extern int matherr _PARAMS((struct exception *e));
 #define M_E		2.7182818284590452354
 #define M_LOG2E		1.4426950408889634074
 #define M_LOG10E	0.43429448190325182765
-#define M_LN2		0.69314718055994530942
+#define M_LN2		_M_LN2
 #define M_LN10		2.30258509299404568402
 #define M_PI		3.14159265358979323846
 #define M_TWOPI         (M_PI * 2.0)
@@ -553,7 +566,7 @@ extern int matherr _PARAMS((struct exception *e));
 #define M_LN2HI         6.9314718036912381649E-1
 #define M_SQRT3	1.73205080756887719000
 #define M_IVLN10        0.43429448190325182765 /* 1 / log(10) */
-#define M_LOG2_E        _M_LOG2_E
+#define M_LOG2_E        _M_LN2
 #define M_INVLN2        1.4426950408889633870E0  /* 1 / log(2) */
 
 /* Global control over fdlibm error handling.  */

@@ -10,14 +10,9 @@
 #include "_ansi.h"
 #include <sys/reent.h>
 
-  /* Indicate that we honor AEABI portability if requested.  */
-#if defined _AEABI_PORTABILITY_LEVEL && _AEABI_PORTABILITY_LEVEL != 0 && !defined _AEABI_PORTABLE
-# define _AEABI_PORTABLE
-#endif
-
-#ifndef NULL
-#define	NULL	0
-#endif
+#define __need_size_t
+#define __need_NULL
+#include <stddef.h>
 
 /* Get _CLOCKS_PER_SEC_ */
 #include <machine/time.h>
@@ -26,16 +21,8 @@
 #define _CLOCKS_PER_SEC_ 1000
 #endif
 
-#ifdef _AEABI_PORTABLE
-extern _CONST int __aeabi_CLOCKS_PER_SEC;
-#define CLOCKS_PER_SEC (__aeabi_CLOCKS_PER_SEC)
-#else
 #define CLOCKS_PER_SEC _CLOCKS_PER_SEC_
-#endif
-
 #define CLK_TCK CLOCKS_PER_SEC
-#define __need_size_t
-#include <stddef.h>
 
 #include <sys/types.h>
 
@@ -52,8 +39,6 @@ struct tm
   int	tm_wday;
   int	tm_yday;
   int	tm_isdst;
-  int	__extra_1;
-  int	__extra_2;
 };
 
 clock_t	   _EXFUN(clock,    (void));
@@ -66,12 +51,17 @@ char	  *_EXFUN(ctime,    (const time_t *_time));
 struct tm *_EXFUN(gmtime,   (const time_t *_timer));
 struct tm *_EXFUN(localtime,(const time_t *_timer));
 #endif
-size_t	   _EXFUN(strftime, (char *_s, size_t _maxsize, const char *_fmt, const struct tm *_t));
+size_t	   _EXFUN(strftime, (char *__restrict _s,
+			     size_t _maxsize, const char *__restrict _fmt,
+			     const struct tm *__restrict _t));
 
-char	  *_EXFUN(asctime_r,	(const struct tm *, char *));
+char	  *_EXFUN(asctime_r,	(const struct tm *__restrict,
+				 char *__restrict));
 char	  *_EXFUN(ctime_r,	(const time_t *, char *));
-struct tm *_EXFUN(gmtime_r,	(const time_t *, struct tm *));
-struct tm *_EXFUN(localtime_r,	(const time_t *, struct tm *));
+struct tm *_EXFUN(gmtime_r,	(const time_t *__restrict,
+				 struct tm *__restrict));
+struct tm *_EXFUN(localtime_r,	(const time_t *__restrict,
+				 struct tm *__restrict));
 
 _END_STD_C
 
@@ -79,8 +69,10 @@ _END_STD_C
 extern "C" {
 #endif
 
-#if !defined __STRICT_ANSI__ && !defined _AEABI_PORTABLE
-char      *_EXFUN(strptime,     (const char *, const char *, struct tm *));
+#ifndef __STRICT_ANSI__
+char      *_EXFUN(strptime,     (const char *__restrict,
+				 const char *__restrict,
+				 struct tm *__restrict));
 _VOID      _EXFUN(tzset,	(_VOID));
 _VOID      _EXFUN(_tzset_r,	(struct _reent *));
 
@@ -136,7 +128,7 @@ extern __IMPORT char *_tzname[2];
 #ifndef tzname
 #define tzname _tzname
 #endif
-#endif /* !__STRICT_ANSI__ && !_AEABI_PORTABLE */
+#endif /* !__STRICT_ANSI__ */
 
 #ifdef __cplusplus
 }
@@ -165,7 +157,9 @@ int _EXFUN(clock_getres,  (clockid_t clock_id, struct timespec *res));
 /* Create a Per-Process Timer, P1003.1b-1993, p. 264 */
 
 int _EXFUN(timer_create,
-  (clockid_t clock_id, struct sigevent *evp, timer_t *timerid));
+  	(clockid_t clock_id,
+ 	struct sigevent *__restrict evp,
+	timer_t *__restrict timerid));
 
 /* Delete a Per_process Timer, P1003.1b-1993, p. 266 */
 
@@ -174,8 +168,9 @@ int _EXFUN(timer_delete, (timer_t timerid));
 /* Per-Process Timers, P1003.1b-1993, p. 267 */
 
 int _EXFUN(timer_settime,
-  (timer_t timerid, int flags, const struct itimerspec *value,
-   struct itimerspec *ovalue));
+	(timer_t timerid, int flags,
+	const struct itimerspec *__restrict value,
+	struct itimerspec *__restrict ovalue));
 int _EXFUN(timer_gettime, (timer_t timerid, struct itimerspec *value));
 int _EXFUN(timer_getoverrun, (timer_t timerid));
 
@@ -187,6 +182,22 @@ int _EXFUN(nanosleep, (const struct timespec  *rqtp, struct timespec *rmtp));
 }
 #endif
 #endif /* _POSIX_TIMERS */
+
+#if defined(_POSIX_CLOCK_SELECTION)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int _EXFUN(clock_nanosleep,
+  (clockid_t clock_id, int flags, const struct timespec *rqtp,
+   struct timespec *rmtp));
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _POSIX_CLOCK_SELECTION */
 
 #ifdef __cplusplus
 extern "C" {
@@ -225,7 +236,7 @@ extern "C" {
    the identifier of the CPU_time clock associated with the PROCESS
    making the function call.  */
 
-#define CLOCK_PROCESS_CPUTIME (clockid_t)2
+#define CLOCK_PROCESS_CPUTIME_ID (clockid_t)2
 
 #endif
 
@@ -235,7 +246,7 @@ extern "C" {
     the identifier of the CPU_time clock associated with the THREAD
     making the function call.  */
 
-#define CLOCK_THREAD_CPUTIME (clockid_t)3
+#define CLOCK_THREAD_CPUTIME_ID (clockid_t)3
 
 #endif
 

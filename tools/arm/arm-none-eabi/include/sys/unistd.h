@@ -46,6 +46,9 @@ int	_EXFUN(euidaccess, (const char *__path, int __mode));
 int     _EXFUN(execl, (const char *__path, const char *, ... ));
 int     _EXFUN(execle, (const char *__path, const char *, ... ));
 int     _EXFUN(execlp, (const char *__file, const char *, ... ));
+#if defined(__CYGWIN__)
+int     _EXFUN(execlpe, (const char *__file, const char *, ... ));
+#endif
 int     _EXFUN(execv, (const char *__path, char * const __argv[] ));
 int     _EXFUN(execve, (const char *__path, char * const __argv[], char * const __envp[] ));
 int     _EXFUN(execvp, (const char *__file, char * const __argv[] ));
@@ -68,6 +71,9 @@ pid_t   _EXFUN(fork, (void ));
 long    _EXFUN(fpathconf, (int __fd, int __name ));
 int     _EXFUN(fsync, (int __fd));
 int     _EXFUN(fdatasync, (int __fd));
+#if defined(__CYGWIN__)
+char *  _EXFUN(get_current_dir_name, (void));
+#endif
 char *  _EXFUN(getcwd, (char *__buf, size_t __size ));
 #if defined(__CYGWIN__)
 int	_EXFUN(getdomainname ,(char *__name, size_t __len));
@@ -94,7 +100,7 @@ pid_t   _EXFUN(getpgid, (pid_t));
 pid_t   _EXFUN(getpgrp, (void ));
 pid_t   _EXFUN(getpid, (void ));
 pid_t   _EXFUN(getppid, (void ));
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__rtems__)
 pid_t   _EXFUN(getsid, (pid_t));
 #endif
 #if !defined(__INSIDE_CYGWIN__)
@@ -146,7 +152,7 @@ int	_EXFUN(ruserok, (const char *rhost, int superuser, const char *ruser, const 
 #endif
 void *  _EXFUN(sbrk,  (ptrdiff_t __incr));
 #if !defined(__INSIDE_CYGWIN__)
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || defined(__rtems__)
 int     _EXFUN(setegid, (gid_t __gid ));
 int     _EXFUN(seteuid, (uid_t __uid ));
 #endif
@@ -169,7 +175,7 @@ int     _EXFUN(setuid, (uid_t __uid ));
 void	_EXFUN(setusershell, (void));
 #endif
 unsigned _EXFUN(sleep, (unsigned int __seconds ));
-void    _EXFUN(swab, (const void *, void *, ssize_t));
+void    _EXFUN(swab, (const void *__restrict, void *__restrict, ssize_t));
 long    _EXFUN(sysconf, (int __name ));
 pid_t   _EXFUN(tcgetpgrp, (int __fildes ));
 int     _EXFUN(tcsetpgrp, (int __fildes, pid_t __pgrp_id ));
@@ -216,7 +222,7 @@ _READ_WRITE_RETURN_TYPE _EXFUN(_write, (int __fd, const void *__buf, size_t __nb
 int     _EXFUN(_execve, (const char *__path, char * const __argv[], char * const __envp[] ));
 #endif
 
-#if defined(__CYGWIN__) || defined(__rtems__) || defined(__sh__) || defined(__SPU__)
+#if defined(__CYGWIN__) || defined(__rtems__) || defined(__aarch64__) || defined (__arm__) || defined(__sh__) || defined(__SPU__)
 #if !defined(__INSIDE_CYGWIN__)
 int     _EXFUN(ftruncate, (int __fd, off_t __length));
 int     _EXFUN(truncate, (const char *, off_t __length));
@@ -227,7 +233,7 @@ int     _EXFUN(truncate, (const char *, off_t __length));
 int	_EXFUN(getdtablesize, (void));
 int	_EXFUN(setdtablesize, (int));
 useconds_t _EXFUN(ualarm, (useconds_t __useconds, useconds_t __interval));
-#if !(defined  (_WINSOCK_H) || defined (__USE_W32_SOCKETS))
+#if !(defined  (_WINSOCK_H) || defined (_WINSOCKAPI_) || defined (__USE_W32_SOCKETS))
 /* winsock[2].h defines as __stdcall, and with int as 2nd arg */
  int	_EXFUN(gethostname, (char *__name, size_t __len));
 #endif
@@ -238,9 +244,11 @@ char *	_EXFUN(mktemp, (char *));
 void    _EXFUN(sync, (void));
 #endif
 
-ssize_t _EXFUN(readlink, (const char *__path, char *__buf, size_t __buflen));
+ssize_t _EXFUN(readlink, (const char *__restrict __path,
+                          char *__restrict __buf, size_t __buflen));
 #if defined(__CYGWIN__)
-ssize_t	_EXFUN(readlinkat, (int __dirfd1, const char *__path, char *__buf, size_t __buflen));
+ssize_t        _EXFUN(readlinkat, (int __dirfd1, const char *__restrict __path,
+                            char *__restrict __buf, size_t __buflen));
 #endif
 int     _EXFUN(symlink, (const char *__name1, const char *__name2));
 #if defined(__CYGWIN__)
@@ -487,14 +495,11 @@ int	_EXFUN(unlinkat, (int, const char *, int));
 #define _CS_XBS5_LPBIG_OFFBIG_LINTFLAGS       16
 #define _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS    17
 #define _CS_POSIX_V6_WIDTH_RESTRICTED_ENVS    _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS
+#define _CS_XBS5_WIDTH_RESTRICTED_ENVS        _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS
 #define _CS_POSIX_V7_THREADS_CFLAGS           18
 #define _CS_POSIX_V7_THREADS_LDFLAGS          19
 #define _CS_V7_ENV                            20
-#define _CS_V6_ENV                           _CS_V6_ENV
-#endif
-
-#ifndef __CYGWIN__
-# define	MAXPATHLEN	1024
+#define _CS_V6_ENV                            _CS_V7_ENV
 #endif
 
 #ifdef __cplusplus

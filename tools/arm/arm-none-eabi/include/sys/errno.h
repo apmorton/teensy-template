@@ -8,21 +8,11 @@ extern "C" {
 #endif
 #define _SYS_ERRNO_H_
 
-  /* Indicate that we honor AEABI portability if requested.  */
-#if defined _AEABI_PORTABILITY_LEVEL && _AEABI_PORTABILITY_LEVEL != 0 && !defined _AEABI_PORTABLE
-# define _AEABI_PORTABLE
-#endif
-
 #include <sys/reent.h>
 
-#ifdef _AEABI_PORTABLE
-extern volatile int *__aeabi_errno_addr _PARAMS ((void));
-# define errno (*__aeabi_errno_addr())
-#else
-# ifndef _REENT_ONLY
-# define errno (*__errno())
+#ifndef _REENT_ONLY
+#define errno (*__errno())
 extern int *__errno _PARAMS ((void));
-# endif
 #endif
 
 /* Please don't use these variables directly.
@@ -32,6 +22,8 @@ extern __IMPORT int _sys_nerr;
 #ifdef __CYGWIN__
 extern __IMPORT const char * const sys_errlist[];
 extern __IMPORT int sys_nerr;
+extern __IMPORT char *program_invocation_name;
+extern __IMPORT char *program_invocation_short_name;
 #endif
 
 #define __errno_r(ptr) ((ptr)->_errno)
@@ -70,19 +62,8 @@ extern __IMPORT int sys_nerr;
 #define	EROFS 30	/* Read only file system */
 #define	EMLINK 31	/* Too many links */
 #define	EPIPE 32	/* Broken pipe */
-#ifdef _AEABI_PORTABLE
-  extern _CONST int __aeabi_EDOM;
-# define EDOM (__aeabi_EDOM)
-#else
 #define	EDOM 33		/* Math arg out of domain of func */
-#endif
-#ifdef _AEABI_PORTABLE
-  extern _CONST int __aeabi_ERANGE;
-# define ERANGE (__aeabi_ERANGE);
-#else
 #define	ERANGE 34	/* Math result not representable */
-#endif
-#ifndef _AEABI_PORTABLE
 #define	ENOMSG 35	/* No message of desired type */
 #define	EIDRM 36	/* Identifier removed */
 #ifdef __LINUX_ERRNO_EXTENSIONS__
@@ -193,14 +174,7 @@ extern __IMPORT int sys_nerr;
 #define ENOSHARE 136    /* No such host or network path */
 #define ECASECLASH 137  /* Filename exists with different case */
 #endif
-#endif /* !_AEABI_PORTABLE */
-#ifdef _AEABI_PORTABLE
-  extern _CONST int __aeabi_EILSEQ;
-# define EILSEQ (__aeabi_EILSEQ)
-#else
 #define EILSEQ 138
-#endif
-#ifndef _AEABI_PORTABLE
 #define EOVERFLOW 139	/* Value too large for defined data type */
 #define ECANCELED 140	/* Operation canceled */
 #define ENOTRECOVERABLE 141	/* State not recoverable */
@@ -211,8 +185,6 @@ extern __IMPORT int sys_nerr;
 #define EWOULDBLOCK EAGAIN	/* Operation would block */
 
 #define __ELASTERROR 2000	/* Users can add values starting here */
-
-#endif /* !_AEABI_PORTABLE */
 
 #ifdef __cplusplus
 }

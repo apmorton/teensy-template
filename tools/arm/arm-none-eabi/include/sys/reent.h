@@ -11,6 +11,7 @@ extern "C" {
 #define _SYS_REENT_H_
 
 #include <_ansi.h>
+#include <stddef.h>
 #include <sys/_types.h>
 
 #define _NULL 0
@@ -85,6 +86,7 @@ struct _atexit {
 	void	(*_fns[_ATEXIT_SIZE])(void);	/* the table itself */
         struct _on_exit_args * _on_exit_args_ptr;
 };
+# define _ATEXIT_INIT {_NULL, 0, {_NULL}, _NULL}
 #else
 struct _atexit {
 	struct	_atexit *_next;			/* next in list */
@@ -93,6 +95,14 @@ struct _atexit {
 	void	(*_fns[_ATEXIT_SIZE])(void);	/* the table itself */
         struct _on_exit_args _on_exit_args;
 };
+# define _ATEXIT_INIT {_NULL, 0, {_NULL}, {{_NULL}, {_NULL}, 0, 0}}
+#endif
+
+#ifdef _REENT_GLOBAL_ATEXIT
+# define _REENT_INIT_ATEXIT
+#else
+# define _REENT_INIT_ATEXIT \
+  _NULL, _ATEXIT_INIT,
 #endif
 
 /*
@@ -166,16 +176,6 @@ extern _VOID   _EXFUN(__sinit,(struct _reent *));
 # define _REENT_SMALL_CHECK_INIT(ptr) /* nothing */
 #endif
 
-  /* When we are compiling portable AEABI code, we must ensure that FILE
-     is an opaque type.  We use a slightly more complicated test on
-     _AEABI_PORTABILITY_LEVEL rather than checking _AEABI_PORTABLE or
-     defining it above because this header is included everywhere, and
-     defining _AEABI_PORTABLE would not be valid for certain
-     headers.  */
-#if defined _AEABI_PORTABILITY_LEVEL && _AEABI_PORTABILITY_LEVEL != 0
-  /* Opaque definition for the AEABI.  */
-struct __sFILE;
-#else
 struct __sFILE {
   unsigned char *_p;	/* current position in (some) buffer */
   int	_r;		/* read space left for getc() */
@@ -185,17 +185,18 @@ struct __sFILE {
   struct __sbuf _bf;	/* the buffer (at least 1 byte, if !NULL) */
   int	_lbfsize;	/* 0 or -_bf._size, for inline putc */
 
-# ifdef _REENT_SMALL
+#ifdef _REENT_SMALL
   struct _reent *_data;
-# endif
+#endif
 
   /* operations */
   _PTR	_cookie;	/* cookie passed to io functions */
 
   _READ_WRITE_RETURN_TYPE _EXFNPTR(_read, (struct _reent *, _PTR,
-					   char *, int));
+					   char *, _READ_WRITE_BUFSIZE_TYPE));
   _READ_WRITE_RETURN_TYPE _EXFNPTR(_write, (struct _reent *, _PTR,
-					    const char *, int));
+					    const char *,
+					    _READ_WRITE_BUFSIZE_TYPE));
   _fpos_t _EXFNPTR(_seek, (struct _reent *, _PTR, _fpos_t, int));
   int _EXFNPTR(_close, (struct _reent *, _PTR));
 
@@ -213,29 +214,27 @@ struct __sFILE {
 
   /* Unix stdio files get aligned to block boundaries on fseek() */
   int	_blksize;	/* stat.st_blksize (may be != _bf._size) */
-  int	_offset;	/* current lseek offset */
+  _off_t _offset;	/* current lseek offset */
 
-# ifndef _REENT_SMALL
+#ifndef _REENT_SMALL
   struct _reent *_data;	/* Here for binary compatibility? Remove? */
-# endif
+#endif
 
-# ifndef __SINGLE_THREAD__
+#ifndef __SINGLE_THREAD__
   _flock_t _lock;	/* for thread-safety locking */
-# endif
+#endif
   _mbstate_t _mbstate;	/* for wide char stdio functions. */
   int   _flags2;        /* for future use */
 };
-#endif /* _AEABI_PORTABILITY_LEVEL */
 
-#if defined __CUSTOM_FILE_IO__ && (!defined _AEABI_PORTABILITY_LEVEL || _AEABI_PORTABILITY_LEVEL == 0)
+#ifdef __CUSTOM_FILE_IO__
 
 /* Get custom _FILE definition.  */
-# include <sys/custom_file.h>
+#include <sys/custom_file.h>
 
-#else /* !__CUSTOM_FILE_IO__ || _AEABI_PORTABILITY_LEVEL */
-# ifdef __LARGE64_FILES
+#else /* !__CUSTOM_FILE_IO__ */
+#ifdef __LARGE64_FILES
 struct __sFILE64 {
-#  if !defined _AEABI_PORTABILITY_LEVEL || _AEABI_PORTABILITY_LEVEL == 0
   unsigned char *_p;	/* current position in (some) buffer */
   int	_r;		/* read space left for getc() */
   int	_w;		/* write space left for putc() */
@@ -250,9 +249,10 @@ struct __sFILE64 {
   _PTR	_cookie;	/* cookie passed to io functions */
 
   _READ_WRITE_RETURN_TYPE _EXFNPTR(_read, (struct _reent *, _PTR,
-					   char *, int));
+					   char *, _READ_WRITE_BUFSIZE_TYPE));
   _READ_WRITE_RETURN_TYPE _EXFNPTR(_write, (struct _reent *, _PTR,
-					    const char *, int));
+					    const char *,
+					    _READ_WRITE_BUFSIZE_TYPE));
   _fpos_t _EXFNPTR(_seek, (struct _reent *, _PTR, _fpos_t, int));
   int _EXFNPTR(_close, (struct _reent *, _PTR));
 
@@ -275,17 +275,16 @@ struct __sFILE64 {
   _off64_t _offset;     /* current lseek offset */
   _fpos64_t _EXFNPTR(_seek64, (struct _reent *, _PTR, _fpos64_t, int));
 
-#   ifndef __SINGLE_THREAD__
+#ifndef __SINGLE_THREAD__
   _flock_t _lock;	/* for thread-safety locking */
-#   endif
-#  endif /* _AEABI_PORTABILITY_LEVEL */
+#endif
   _mbstate_t _mbstate;	/* for wide char stdio functions. */
 };
 typedef struct __sFILE64 __FILE;
-# else
+#else
 typedef struct __sFILE   __FILE;
-# endif /* __LARGE64_FILES */
-#endif /* !__CUSTOM_FILE_IO__ || _AEABI_PORTABILITY_LEVEL */
+#endif /* __LARGE64_FILES */
+#endif /* !__CUSTOM_FILE_IO__ */
 
 struct _glue
 {
@@ -338,15 +337,7 @@ struct _rand48 {
  * reentrant.  IE: All state information is contained here.
  */
 
-/* We only provide a forward declaration of struct _reent if we are
-   compiling with _AEABI_PORTABILITY_LEVEL != 0 to avoid problems with
-   struct _reent needing to know the size of FILE objects (which need to
-   be opaque types, see above).  Fortunately, this is not a problem, as
-   only pointers to struct _reent are passed around.  */
-#if defined _AEABI_PORTABILITY_LEVEL && _AEABI_PORTABILITY_LEVEL != 0
-struct _reent;
-#else
-# ifdef _REENT_SMALL
+#ifdef _REENT_SMALL
 
 struct _mprec
 {
@@ -374,7 +365,7 @@ struct _misc_reent
   _mbstate_t _wcsrtombs_state;
 };
 
-/* This version of _reent is layed our with "int"s in pairs, to help
+/* This version of _reent is laid out with "int"s in pairs, to help
  * ports with 16-bit int's but 32-bit pointers, align nicely.  */
 struct _reent
 {
@@ -413,9 +404,11 @@ struct _reent
   /* signal info */
   void (**(_sig_func))(int);
 
+# ifndef _REENT_GLOBAL_ATEXIT
   /* atexit stuff */
   struct _atexit *_atexit;
   struct _atexit _atexit0;
+# endif
 
   struct _glue __sglue;			/* root of glue chain */
   __FILE *__sf;			        /* file descriptors */
@@ -446,60 +439,35 @@ extern const struct __sFILE_fake __sf_fake_stderr;
     _NULL, \
     _NULL, \
     _NULL, \
-    _NULL, \
-    {_NULL, 0, {_NULL}, _NULL}, \
+    _REENT_INIT_ATEXIT \
     {_NULL, 0, _NULL}, \
     _NULL, \
     _NULL, \
     _NULL \
   }
 
-# define _REENT_INIT_PTR(var) \
-  { (var)->_stdin = (__FILE *)&__sf_fake_stdin; \
+#define _REENT_INIT_PTR(var) \
+  { memset((var), 0, sizeof(*(var))); \
+    (var)->_stdin = (__FILE *)&__sf_fake_stdin; \
     (var)->_stdout = (__FILE *)&__sf_fake_stdout; \
     (var)->_stderr = (__FILE *)&__sf_fake_stderr; \
-    (var)->_errno = 0; \
-    (var)->_inc = 0; \
-    (var)->_emergency = _NULL; \
-    (var)->__sdidinit = 0; \
-    (var)->_current_category = 0; \
     (var)->_current_locale = "C"; \
-    (var)->_mp = _NULL; \
-    (var)->__cleanup = _NULL; \
-    (var)->_gamma_signgam = 0; \
-    (var)->_cvtlen = 0; \
-    (var)->_cvtbuf = _NULL; \
-    (var)->_r48 = _NULL; \
-    (var)->_localtime_buf = _NULL; \
-    (var)->_asctime_buf = _NULL; \
-    (var)->_sig_func = _NULL; \
-    (var)->_atexit = _NULL; \
-    (var)->_atexit0._next = _NULL; \
-    (var)->_atexit0._ind = 0; \
-    (var)->_atexit0._fns[0] = _NULL; \
-    (var)->_atexit0._on_exit_args_ptr = _NULL; \
-    (var)->__sglue._next = _NULL; \
-    (var)->__sglue._niobs = 0; \
-    (var)->__sglue._iobs = _NULL; \
-    (var)->__sf = 0; \
-    (var)->_misc = _NULL; \
-    (var)->_signal_buf = _NULL; \
   }
 
 /* Only built the assert() calls if we are built with debugging.  */
-# if DEBUG 
-#  include <assert.h>
-#  define __reent_assert(x) assert(x)
-# else
-#  define __reent_assert(x) ((void)0)
-# endif
+#if DEBUG
+#include <assert.h>
+#define __reent_assert(x) assert(x)
+#else
+#define __reent_assert(x) ((void)0)
+#endif
 
-# ifdef __CUSTOM_FILE_IO__
-#  error Custom FILE I/O and _REENT_SMALL not currently supported.
-# endif
+#ifdef __CUSTOM_FILE_IO__
+#error Custom FILE I/O and _REENT_SMALL not currently supported.
+#endif
 
 /* Generic _REENT check macro.  */
-# define _REENT_CHECK(var, what, type, size, init) do { \
+#define _REENT_CHECK(var, what, type, size, init) do { \
   struct _reent *_r = (var); \
   if (_r->what == NULL) { \
     _r->what = (type)malloc(size); \
@@ -508,16 +476,16 @@ extern const struct __sFILE_fake __sf_fake_stderr;
   } \
 } while (0)
 
-# define _REENT_CHECK_TM(var) \
+#define _REENT_CHECK_TM(var) \
   _REENT_CHECK(var, _localtime_buf, struct __tm *, sizeof *((var)->_localtime_buf), \
     /* nothing */)
 
-# define _REENT_CHECK_ASCTIME_BUF(var) \
+#define _REENT_CHECK_ASCTIME_BUF(var) \
   _REENT_CHECK(var, _asctime_buf, char *, _REENT_ASCTIME_SIZE, \
     memset((var)->_asctime_buf, 0, _REENT_ASCTIME_SIZE))
 
 /* Handle the dynamically allocated rand48 structure. */
-# define _REENT_INIT_RAND48(var) do { \
+#define _REENT_INIT_RAND48(var) do { \
   struct _reent *_r = (var); \
   _r->_r48->_seed[0] = _RAND48_SEED_0; \
   _r->_r48->_seed[1] = _RAND48_SEED_1; \
@@ -528,22 +496,22 @@ extern const struct __sFILE_fake __sf_fake_stderr;
   _r->_r48->_add = _RAND48_ADD; \
   _r->_r48->_rand_next = 1; \
 } while (0)
-# define _REENT_CHECK_RAND48(var) \
+#define _REENT_CHECK_RAND48(var) \
   _REENT_CHECK(var, _r48, struct _rand48 *, sizeof *((var)->_r48), _REENT_INIT_RAND48((var)))
 
-# define _REENT_INIT_MP(var) do { \
+#define _REENT_INIT_MP(var) do { \
   struct _reent *_r = (var); \
   _r->_mp->_result_k = 0; \
   _r->_mp->_result = _r->_mp->_p5s = _NULL; \
   _r->_mp->_freelist = _NULL; \
 } while (0)
-# define _REENT_CHECK_MP(var) \
+#define _REENT_CHECK_MP(var) \
   _REENT_CHECK(var, _mp, struct _mprec *, sizeof *((var)->_mp), _REENT_INIT_MP(var))
 
-# define _REENT_CHECK_EMERGENCY(var) \
+#define _REENT_CHECK_EMERGENCY(var) \
   _REENT_CHECK(var, _emergency, char *, _REENT_EMERGENCY_SIZE, /* nothing */)
 
-# define _REENT_INIT_MISC(var) do { \
+#define _REENT_INIT_MISC(var) do { \
   struct _reent *_r = (var); \
   _r->_misc->_strtok_last = _NULL; \
   _r->_misc->_mblen_state.__count = 0; \
@@ -565,36 +533,36 @@ extern const struct __sFILE_fake __sf_fake_stderr;
   _r->_misc->_l64a_buf[0] = '\0'; \
   _r->_misc->_getdate_err = 0; \
 } while (0)
-# define _REENT_CHECK_MISC(var) \
+#define _REENT_CHECK_MISC(var) \
   _REENT_CHECK(var, _misc, struct _misc_reent *, sizeof *((var)->_misc), _REENT_INIT_MISC(var))
 
-# define _REENT_CHECK_SIGNAL_BUF(var) \
+#define _REENT_CHECK_SIGNAL_BUF(var) \
   _REENT_CHECK(var, _signal_buf, char *, _REENT_SIGNAL_SIZE, /* nothing */)
 
-# define _REENT_SIGNGAM(ptr)	((ptr)->_gamma_signgam)
-# define _REENT_RAND_NEXT(ptr)	((ptr)->_r48->_rand_next)
-# define _REENT_RAND48_SEED(ptr)	((ptr)->_r48->_seed)
-# define _REENT_RAND48_MULT(ptr)	((ptr)->_r48->_mult)
-# define _REENT_RAND48_ADD(ptr)	((ptr)->_r48->_add)
-# define _REENT_MP_RESULT(ptr)	((ptr)->_mp->_result)
-# define _REENT_MP_RESULT_K(ptr)	((ptr)->_mp->_result_k)
-# define _REENT_MP_P5S(ptr)	((ptr)->_mp->_p5s)
-# define _REENT_MP_FREELIST(ptr)	((ptr)->_mp->_freelist)
-# define _REENT_ASCTIME_BUF(ptr)	((ptr)->_asctime_buf)
-# define _REENT_TM(ptr)		((ptr)->_localtime_buf)
-# define _REENT_EMERGENCY(ptr)	((ptr)->_emergency)
-# define _REENT_STRTOK_LAST(ptr)	((ptr)->_misc->_strtok_last)
-# define _REENT_MBLEN_STATE(ptr)	((ptr)->_misc->_mblen_state)
-# define _REENT_MBTOWC_STATE(ptr)((ptr)->_misc->_mbtowc_state)
-# define _REENT_WCTOMB_STATE(ptr)((ptr)->_misc->_wctomb_state)
-# define _REENT_MBRLEN_STATE(ptr) ((ptr)->_misc->_mbrlen_state)
-# define _REENT_MBRTOWC_STATE(ptr) ((ptr)->_misc->_mbrtowc_state)
-# define _REENT_MBSRTOWCS_STATE(ptr) ((ptr)->_misc->_mbsrtowcs_state)
-# define _REENT_WCRTOMB_STATE(ptr) ((ptr)->_misc->_wcrtomb_state)
-# define _REENT_WCSRTOMBS_STATE(ptr) ((ptr)->_misc->_wcsrtombs_state)
-# define _REENT_L64A_BUF(ptr)    ((ptr)->_misc->_l64a_buf)
-# define _REENT_GETDATE_ERR_P(ptr) (&((ptr)->_misc->_getdate_err))
-# define _REENT_SIGNAL_BUF(ptr)  ((ptr)->_signal_buf)
+#define _REENT_SIGNGAM(ptr)	((ptr)->_gamma_signgam)
+#define _REENT_RAND_NEXT(ptr)	((ptr)->_r48->_rand_next)
+#define _REENT_RAND48_SEED(ptr)	((ptr)->_r48->_seed)
+#define _REENT_RAND48_MULT(ptr)	((ptr)->_r48->_mult)
+#define _REENT_RAND48_ADD(ptr)	((ptr)->_r48->_add)
+#define _REENT_MP_RESULT(ptr)	((ptr)->_mp->_result)
+#define _REENT_MP_RESULT_K(ptr)	((ptr)->_mp->_result_k)
+#define _REENT_MP_P5S(ptr)	((ptr)->_mp->_p5s)
+#define _REENT_MP_FREELIST(ptr)	((ptr)->_mp->_freelist)
+#define _REENT_ASCTIME_BUF(ptr)	((ptr)->_asctime_buf)
+#define _REENT_TM(ptr)		((ptr)->_localtime_buf)
+#define _REENT_EMERGENCY(ptr)	((ptr)->_emergency)
+#define _REENT_STRTOK_LAST(ptr)	((ptr)->_misc->_strtok_last)
+#define _REENT_MBLEN_STATE(ptr)	((ptr)->_misc->_mblen_state)
+#define _REENT_MBTOWC_STATE(ptr)((ptr)->_misc->_mbtowc_state)
+#define _REENT_WCTOMB_STATE(ptr)((ptr)->_misc->_wctomb_state)
+#define _REENT_MBRLEN_STATE(ptr) ((ptr)->_misc->_mbrlen_state)
+#define _REENT_MBRTOWC_STATE(ptr) ((ptr)->_misc->_mbrtowc_state)
+#define _REENT_MBSRTOWCS_STATE(ptr) ((ptr)->_misc->_mbsrtowcs_state)
+#define _REENT_WCRTOMB_STATE(ptr) ((ptr)->_misc->_wcrtomb_state)
+#define _REENT_WCSRTOMBS_STATE(ptr) ((ptr)->_misc->_wcsrtombs_state)
+#define _REENT_L64A_BUF(ptr)    ((ptr)->_misc->_l64a_buf)
+#define _REENT_GETDATE_ERR_P(ptr) (&((ptr)->_misc->_getdate_err))
+#define _REENT_SIGNAL_BUF(ptr)  ((ptr)->_signal_buf)
 
 #else /* !_REENT_SMALL */
 
@@ -656,15 +624,17 @@ struct _reent
      allow addition of new reent fields and keep binary compatibility.   */
       struct
         {
-# define _N_LISTS 30
+#define _N_LISTS 30
           unsigned char * _nextf[_N_LISTS];
           unsigned int _nmalloc[_N_LISTS];
         } _unused;
     } _new;
 
+# ifndef _REENT_GLOBAL_ATEXIT
   /* atexit stuff */
   struct _atexit *_atexit;	/* points to head of LIFO stack */
   struct _atexit _atexit0;	/* one guaranteed table, required by ANSI */
+# endif
 
   /* signal info */
   void (**(_sig_func))(int);
@@ -676,7 +646,7 @@ struct _reent
   __FILE __sf[3];  		/* first three file descriptors */
 };
 
-# define _REENT_INIT(var) \
+#define _REENT_INIT(var) \
   { 0, \
     &(var).__sf[0], \
     &(var).__sf[1], \
@@ -719,34 +689,17 @@ struct _reent
         {0, {0}} \
       } \
     }, \
-    _NULL, \
-    {_NULL, 0, {_NULL}, {{_NULL}, {_NULL}, 0, 0}}, \
+    _REENT_INIT_ATEXIT \
     _NULL, \
     {_NULL, 0, _NULL} \
   }
 
-# define _REENT_INIT_PTR(var) \
-  { (var)->_errno = 0; \
+#define _REENT_INIT_PTR(var) \
+  { memset((var), 0, sizeof(*(var))); \
     (var)->_stdin = &(var)->__sf[0]; \
     (var)->_stdout = &(var)->__sf[1]; \
     (var)->_stderr = &(var)->__sf[2]; \
-    (var)->_inc = 0; \
-    memset(&(var)->_emergency, 0, sizeof((var)->_emergency)); \
-    (var)->_current_category = 0; \
     (var)->_current_locale = "C"; \
-    (var)->__sdidinit = 0; \
-    (var)->__cleanup = _NULL; \
-    (var)->_result = _NULL; \
-    (var)->_result_k = 0; \
-    (var)->_p5s = _NULL; \
-    (var)->_freelist = _NULL; \
-    (var)->_cvtlen = 0; \
-    (var)->_cvtbuf = _NULL; \
-    (var)->_new._reent._unused_rand = 0; \
-    (var)->_new._reent._strtok_last = _NULL; \
-    (var)->_new._reent._asctime_buf[0] = 0; \
-    memset(&(var)->_new._reent._localtime_buf, 0, sizeof((var)->_new._reent._localtime_buf)); \
-    (var)->_new._reent._gamma_signgam = 0; \
     (var)->_new._reent._rand_next = 1; \
     (var)->_new._reent._r48._seed[0] = _RAND48_SEED_0; \
     (var)->_new._reent._r48._seed[1] = _RAND48_SEED_1; \
@@ -755,73 +708,42 @@ struct _reent
     (var)->_new._reent._r48._mult[1] = _RAND48_MULT_1; \
     (var)->_new._reent._r48._mult[2] = _RAND48_MULT_2; \
     (var)->_new._reent._r48._add = _RAND48_ADD; \
-    (var)->_new._reent._mblen_state.__count = 0; \
-    (var)->_new._reent._mblen_state.__value.__wch = 0; \
-    (var)->_new._reent._mbtowc_state.__count = 0; \
-    (var)->_new._reent._mbtowc_state.__value.__wch = 0; \
-    (var)->_new._reent._wctomb_state.__count = 0; \
-    (var)->_new._reent._wctomb_state.__value.__wch = 0; \
-    (var)->_new._reent._mbrlen_state.__count = 0; \
-    (var)->_new._reent._mbrlen_state.__value.__wch = 0; \
-    (var)->_new._reent._mbrtowc_state.__count = 0; \
-    (var)->_new._reent._mbrtowc_state.__value.__wch = 0; \
-    (var)->_new._reent._mbsrtowcs_state.__count = 0; \
-    (var)->_new._reent._mbsrtowcs_state.__value.__wch = 0; \
-    (var)->_new._reent._wcrtomb_state.__count = 0; \
-    (var)->_new._reent._wcrtomb_state.__value.__wch = 0; \
-    (var)->_new._reent._wcsrtombs_state.__count = 0; \
-    (var)->_new._reent._wcsrtombs_state.__value.__wch = 0; \
-    (var)->_new._reent._l64a_buf[0] = '\0'; \
-    (var)->_new._reent._signal_buf[0] = '\0'; \
-    (var)->_new._reent._getdate_err = 0; \
-    (var)->_atexit = _NULL; \
-    (var)->_atexit0._next = _NULL; \
-    (var)->_atexit0._ind = 0; \
-    (var)->_atexit0._fns[0] = _NULL; \
-    (var)->_atexit0._on_exit_args._fntypes = 0; \
-    (var)->_atexit0._on_exit_args._fnargs[0] = _NULL; \
-    (var)->_sig_func = _NULL; \
-    (var)->__sglue._next = _NULL; \
-    (var)->__sglue._niobs = 0; \
-    (var)->__sglue._iobs = _NULL; \
-    memset(&(var)->__sf, 0, sizeof((var)->__sf)); \
   }
 
-# define _REENT_CHECK_RAND48(ptr)	/* nothing */
-# define _REENT_CHECK_MP(ptr)		/* nothing */
-# define _REENT_CHECK_TM(ptr)		/* nothing */
-# define _REENT_CHECK_ASCTIME_BUF(ptr)	/* nothing */
-# define _REENT_CHECK_EMERGENCY(ptr)	/* nothing */
-# define _REENT_CHECK_MISC(ptr)	        /* nothing */
-# define _REENT_CHECK_SIGNAL_BUF(ptr)	/* nothing */
+#define _REENT_CHECK_RAND48(ptr)	/* nothing */
+#define _REENT_CHECK_MP(ptr)		/* nothing */
+#define _REENT_CHECK_TM(ptr)		/* nothing */
+#define _REENT_CHECK_ASCTIME_BUF(ptr)	/* nothing */
+#define _REENT_CHECK_EMERGENCY(ptr)	/* nothing */
+#define _REENT_CHECK_MISC(ptr)	        /* nothing */
+#define _REENT_CHECK_SIGNAL_BUF(ptr)	/* nothing */
 
-# define _REENT_SIGNGAM(ptr)	((ptr)->_new._reent._gamma_signgam)
-# define _REENT_RAND_NEXT(ptr)	((ptr)->_new._reent._rand_next)
-# define _REENT_RAND48_SEED(ptr)	((ptr)->_new._reent._r48._seed)
-# define _REENT_RAND48_MULT(ptr)	((ptr)->_new._reent._r48._mult)
-# define _REENT_RAND48_ADD(ptr)	((ptr)->_new._reent._r48._add)
-# define _REENT_MP_RESULT(ptr)	((ptr)->_result)
-# define _REENT_MP_RESULT_K(ptr)	((ptr)->_result_k)
-# define _REENT_MP_P5S(ptr)	((ptr)->_p5s)
-# define _REENT_MP_FREELIST(ptr)	((ptr)->_freelist)
-# define _REENT_ASCTIME_BUF(ptr)	((ptr)->_new._reent._asctime_buf)
-# define _REENT_TM(ptr)		(&(ptr)->_new._reent._localtime_buf)
-# define _REENT_EMERGENCY(ptr)	((ptr)->_emergency)
-# define _REENT_STRTOK_LAST(ptr)	((ptr)->_new._reent._strtok_last)
-# define _REENT_MBLEN_STATE(ptr)	((ptr)->_new._reent._mblen_state)
-# define _REENT_MBTOWC_STATE(ptr)((ptr)->_new._reent._mbtowc_state)
-# define _REENT_WCTOMB_STATE(ptr)((ptr)->_new._reent._wctomb_state)
-# define _REENT_MBRLEN_STATE(ptr)((ptr)->_new._reent._mbrlen_state)
-# define _REENT_MBRTOWC_STATE(ptr)((ptr)->_new._reent._mbrtowc_state)
-# define _REENT_MBSRTOWCS_STATE(ptr)((ptr)->_new._reent._mbsrtowcs_state)
-# define _REENT_WCRTOMB_STATE(ptr)((ptr)->_new._reent._wcrtomb_state)
-# define _REENT_WCSRTOMBS_STATE(ptr)((ptr)->_new._reent._wcsrtombs_state)
-# define _REENT_L64A_BUF(ptr)    ((ptr)->_new._reent._l64a_buf)
-# define _REENT_SIGNAL_BUF(ptr)  ((ptr)->_new._reent._signal_buf)
-# define _REENT_GETDATE_ERR_P(ptr) (&((ptr)->_new._reent._getdate_err))
+#define _REENT_SIGNGAM(ptr)	((ptr)->_new._reent._gamma_signgam)
+#define _REENT_RAND_NEXT(ptr)	((ptr)->_new._reent._rand_next)
+#define _REENT_RAND48_SEED(ptr)	((ptr)->_new._reent._r48._seed)
+#define _REENT_RAND48_MULT(ptr)	((ptr)->_new._reent._r48._mult)
+#define _REENT_RAND48_ADD(ptr)	((ptr)->_new._reent._r48._add)
+#define _REENT_MP_RESULT(ptr)	((ptr)->_result)
+#define _REENT_MP_RESULT_K(ptr)	((ptr)->_result_k)
+#define _REENT_MP_P5S(ptr)	((ptr)->_p5s)
+#define _REENT_MP_FREELIST(ptr)	((ptr)->_freelist)
+#define _REENT_ASCTIME_BUF(ptr)	((ptr)->_new._reent._asctime_buf)
+#define _REENT_TM(ptr)		(&(ptr)->_new._reent._localtime_buf)
+#define _REENT_EMERGENCY(ptr)	((ptr)->_emergency)
+#define _REENT_STRTOK_LAST(ptr)	((ptr)->_new._reent._strtok_last)
+#define _REENT_MBLEN_STATE(ptr)	((ptr)->_new._reent._mblen_state)
+#define _REENT_MBTOWC_STATE(ptr)((ptr)->_new._reent._mbtowc_state)
+#define _REENT_WCTOMB_STATE(ptr)((ptr)->_new._reent._wctomb_state)
+#define _REENT_MBRLEN_STATE(ptr)((ptr)->_new._reent._mbrlen_state)
+#define _REENT_MBRTOWC_STATE(ptr)((ptr)->_new._reent._mbrtowc_state)
+#define _REENT_MBSRTOWCS_STATE(ptr)((ptr)->_new._reent._mbsrtowcs_state)
+#define _REENT_WCRTOMB_STATE(ptr)((ptr)->_new._reent._wcrtomb_state)
+#define _REENT_WCSRTOMBS_STATE(ptr)((ptr)->_new._reent._wcsrtombs_state)
+#define _REENT_L64A_BUF(ptr)    ((ptr)->_new._reent._l64a_buf)
+#define _REENT_SIGNAL_BUF(ptr)  ((ptr)->_new._reent._signal_buf)
+#define _REENT_GETDATE_ERR_P(ptr) (&((ptr)->_new._reent._getdate_err))
 
-# endif /* !_REENT_SMALL */
-#endif /* _AEABI_PORTABILITY_LEVEL */
+#endif /* !_REENT_SMALL */
 
 /* This value is used in stdlib/misc.c.  reent/reent.c has to know it
    as well to make sure the freelist is correctly free'd.  Therefore
@@ -844,8 +766,6 @@ void _reclaim_reent _PARAMS ((struct _reent *));
 
 /* #define _REENT_ONLY define this to get only reentrant routines */
 
-#ifndef _REENT_ONLY
-
 #if defined(__DYNAMIC_REENT__) && !defined(__SINGLE_THREAD__)
 #ifndef __getreent
   struct _reent * _EXFUN(__getreent, (void));
@@ -855,9 +775,14 @@ void _reclaim_reent _PARAMS ((struct _reent *));
 # define _REENT _impure_ptr
 #endif /* __SINGLE_THREAD__ || !__DYNAMIC_REENT__ */
 
-#endif /* !_REENT_ONLY */
-
 #define _GLOBAL_REENT _global_impure_ptr
+
+#ifdef _REENT_GLOBAL_ATEXIT
+extern struct _atexit *_global_atexit; /* points to head of LIFO stack */
+# define _GLOBAL_ATEXIT _global_atexit
+#else
+# define _GLOBAL_ATEXIT (_GLOBAL_REENT->_atexit)
+#endif
 
 #ifdef __cplusplus
 }

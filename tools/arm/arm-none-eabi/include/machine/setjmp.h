@@ -9,6 +9,11 @@ _BEGIN_STD_C
 #define _JBLEN 23
 #endif
 
+#if defined(__aarch64__)
+#define _JBLEN 22
+#define _JBTYPE long long
+#endif
+
 #if defined(__AVR__)
 #define _JBLEN 24
 #endif
@@ -23,6 +28,12 @@ _BEGIN_STD_C
 
 #ifdef __BFIN__
 #define _JBLEN  40
+#endif
+
+#ifdef __epiphany__
+/* All callee preserved registers: r4-r10,fp, sp, lr,r15, r32-r39  */
+#define _JBTYPE long long
+#define _JBLEN 10
 #endif
 
 /* necv70 was 9 as well. */
@@ -44,6 +55,13 @@ _BEGIN_STD_C
 #define _JBLEN  32
 #endif
 
+#ifdef __nds32__
+/* Only 17 words are currently needed.
+   Preserve one word slot if we need to expand.
+   Check newlib/libc/machine/nds32/setjmp.S for more information.  */
+#define _JBLEN 18
+#endif
+
 #if defined(__Z8001__) || defined(__Z8002__)
 /* 16 regs + pc */
 #define _JBLEN 20
@@ -57,19 +75,24 @@ _BEGIN_STD_C
 #define	_JBLEN	9
 #endif
 
-#if defined(__CYGWIN__) && !defined (_JBLEN)
-#define _JBLEN (13 * 4)
-#elif defined (__i386__)
-#if defined(__unix__) || defined(__rtems__)
-# define _JBLEN	9
-#else
-#include "setjmp-dj.h"
-#endif
+#ifdef __i386__
+# if defined(__CYGWIN__) && !defined (_JBLEN)
+#  define _JBLEN (13 * 4)
+# elif defined(__unix__) || defined(__rtems__)
+#  define _JBLEN	9
+# else
+#  include "setjmp-dj.h"
+# endif
 #endif
 
 #ifdef __x86_64__
-#define _JBTYPE long long
-#define _JBLEN  8
+# ifdef __CYGWIN__
+#  define _JBTYPE long
+#  define _JBLEN  32
+# else
+#  define _JBTYPE long long
+#  define _JBLEN  8
+# endif
 #endif
 
 #ifdef __i960__
@@ -83,14 +106,14 @@ _BEGIN_STD_C
 #endif
 
 #ifdef __mips__
-#ifdef __mips64
-#define _JBTYPE long long
-#endif
-#ifdef __mips_soft_float
-#define _JBLEN 11
-#else
-#define _JBLEN 23
-#endif
+# if defined(__mips64) || (__mips_fpr == 64)
+#  define _JBTYPE long long
+# endif
+# ifdef __mips_soft_float
+#  define _JBLEN 11
+# else
+#  define _JBLEN 23
+# endif
 #endif
 
 #ifdef __m88000__
@@ -174,6 +197,10 @@ _BEGIN_STD_C
 #define _JBLEN 9
 #endif
 
+#ifdef __TMS320C6X__
+#define _JBLEN 13
+#endif
+
 #ifdef __TIC80__
 #define _JBLEN 13
 #endif
@@ -198,6 +225,13 @@ _BEGIN_STD_C
 
 #ifdef __CRX__
 #define _JBLEN 9
+#endif
+
+#if (defined(__CR16__) || defined(__CR16C__) ||defined(__CR16CP__))
+/* r6, r7, r8, r9, r10, r11, r12 (r12L, r12H), 
+ * r13 (r13L, r13H), ra(raL, raH), sp(spL, spH) */
+#define _JBLEN 14
+#define _JBTYPE unsigned short
 #endif
 
 #ifdef __fr30__
@@ -254,15 +288,44 @@ _BEGIN_STD_C
 #define _JBTYPE unsigned short
 #endif /* __m32c__ */
 
+#ifdef __MSP430__
+#define _JBLEN 9
+
+#ifdef __MSP430X_LARGE__
+#define _JBTYPE unsigned long
+#else
+#define _JBTYPE unsigned short
+#endif
+#endif
+
+#ifdef __RL78__
+/* Three banks of registers, SP, CS, ES, PC */
+#define _JBLEN (8*3+8)
+#define _JBTYPE unsigned char
+#endif
+
+/*
+ * There are two versions of setjmp()/longjmp():
+ *   1) Compiler (gcc) built-in versions.
+ *   2) Function-call versions.
+ *
+ * The built-in versions are used most of the time.  When used, gcc replaces
+ * calls to setjmp()/longjmp() with inline assembly code.  The built-in 
+ * versions save/restore a variable number of registers.
+
+ * _JBLEN is set to 40 to be ultra-safe with the built-in versions.
+ * It only needs to be 12 for the function-call versions
+ * but this data structure is used by both versions.
+ */
+#ifdef __NIOS2__
+#define _JBLEN 40
+#define _JBTYPE unsigned long
+#endif
+
 #ifdef __RX__
 #define _JBLEN 0x44
 #endif
 
-#ifdef _AEABI_PORTABLE
-#include <sys/_types.h>
-extern _CONST int __aeabi_JMP_BUF_SIZE;
-typedef __int64_t jmp_buf[];
-#else
 #ifdef _JBLEN
 #ifdef _JBTYPE
 typedef	_JBTYPE jmp_buf[_JBLEN];
@@ -270,7 +333,6 @@ typedef	_JBTYPE jmp_buf[_JBLEN];
 typedef	int jmp_buf[_JBLEN];
 #endif
 #endif
-#endif /* _AEABI_PORTABLE */
 
 _END_STD_C
 
@@ -283,7 +345,8 @@ extern "C" {
 
 /* POSIX sigsetjmp/siglongjmp macros */
 #ifdef _JBTYPE
-typedef _JBTYPE sigjmp_buf[_JBLEN+1+(sizeof (sigset_t)/sizeof (_JBTYPE))];
+typedef _JBTYPE sigjmp_buf[_JBLEN+1+((sizeof (_JBTYPE) + sizeof (sigset_t) - 1)
+				     /sizeof (_JBTYPE))];
 #else
 typedef int sigjmp_buf[_JBLEN+1+(sizeof (sigset_t)/sizeof (int))];
 #endif
