@@ -10,10 +10,10 @@
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  *
- * 1. The above copyright notice and this permission notice shall be 
+ * 1. The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * 2. If the Software is incorporated into a build system that allows 
+ * 2. If the Software is incorporated into a build system that allows
  * selection among a list of target devices, then similar target
  * devices manufactured by PJRC.COM must be included in the list of
  * target devices and selectable in the same manner.
@@ -31,13 +31,17 @@
 #ifndef _usb_dev_h_
 #define _usb_dev_h_
 
+#define USB_DESC_LIST_DEFINE
+#include "usb_desc.h"
+
+#if F_CPU >= 20000000 && !defined(USB_DISABLED)
+
 // This header is NOT meant to be included when compiling
 // user sketches in Arduino.  The low-level functions
 // provided by usb_dev.c are meant to be called only by
 // code which provides higher-level interfaces to the user.
 
 #include "usb_mem.h"
-#include "usb_desc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,6 +104,19 @@ extern void usb_flightsim_flush_callback(void);
 }
 #endif
 
+#else // F_CPU < 20000000
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void usb_init(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif // F_CPU
 
 #endif

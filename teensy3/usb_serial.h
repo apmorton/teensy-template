@@ -10,10 +10,10 @@
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  *
- * 1. The above copyright notice and this permission notice shall be 
+ * 1. The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * 2. If the Software is incorporated into a build system that allows 
+ * 2. If the Software is incorporated into a build system that allows
  * selection among a list of target devices, then similar target
  * devices manufactured by PJRC.COM must be included in the list of
  * target devices and selectable in the same manner.
@@ -31,9 +31,13 @@
 #ifndef USBserial_h_
 #define USBserial_h_
 
-#if defined(USB_SERIAL) || defined(USB_SERIAL_HID)
+#include "usb_desc.h"
+
+#if (defined(CDC_STATUS_INTERFACE) && defined(CDC_DATA_INTERFACE)) || defined(USB_DISABLED)
 
 #include <inttypes.h>
+
+#if F_CPU >= 20000000 && !defined(USB_DISABLED)
 
 // C language implementation
 #ifdef __cplusplus
@@ -46,6 +50,7 @@ int usb_serial_read(void *buffer, uint32_t size);
 void usb_serial_flush_input(void);
 int usb_serial_putchar(uint8_t c);
 int usb_serial_write(const void *buffer, uint32_t size);
+int usb_serial_write_buffer_free(void);
 void usb_serial_flush_output(void);
 extern uint32_t usb_cdc_line_coding[2];
 extern volatile uint8_t usb_cdc_line_rtsdtr;
@@ -57,7 +62,6 @@ extern volatile uint8_t usb_configuration;
 
 #define USB_SERIAL_DTR  0x01
 #define USB_SERIAL_RTS  0x02
-
 
 // C++ interface
 #ifdef __cplusplus
@@ -77,6 +81,7 @@ public:
 	size_t write(long n) { return write((uint8_t)n); }
 	size_t write(unsigned int n) { return write((uint8_t)n); }
 	size_t write(int n) { return write((uint8_t)n); }
+	int availableForWrite() { return usb_serial_write_buffer_free(); }
 	using Print::write;
         void send_now(void) { usb_serial_flush_output(); }
         uint32_t baud(void) { return usb_cdc_line_coding[0]; }
@@ -98,10 +103,50 @@ public:
 	}
 
 };
-
 extern usb_serial_class Serial;
-
+extern void serialEvent(void);
 #endif // __cplusplus
 
-#endif // USB_SERIAL || USB_SERIAL_HID
+
+#else  // F_CPU < 20000000
+
+// Allow Arduino programs using Serial to compile, but Serial will do nothing.
+#ifdef __cplusplus
+#include "Stream.h"
+class usb_serial_class : public Stream
+{
+public:
+        void begin(long) { };
+        void end() { };
+        virtual int available() { return 0; }
+        virtual int read() { return -1; }
+        virtual int peek() { return -1; }
+        virtual void flush() { }
+        virtual size_t write(uint8_t c) { return 1; }
+        virtual size_t write(const uint8_t *buffer, size_t size) { return size; }
+	size_t write(unsigned long n) { return 1; }
+	size_t write(long n) { return 1; }
+	size_t write(unsigned int n) { return 1; }
+	size_t write(int n) { return 1; }
+	int availableForWrite() { return 0; }
+	using Print::write;
+        void send_now(void) { }
+        uint32_t baud(void) { return 0; }
+        uint8_t stopbits(void) { return 1; }
+        uint8_t paritytype(void) { return 0; }
+        uint8_t numbits(void) { return 8; }
+        uint8_t dtr(void) { return 1; }
+        uint8_t rts(void) { return 1; }
+        operator bool() { return true; }
+};
+
+extern usb_serial_class Serial;
+extern void serialEvent(void);
+#endif // __cplusplus
+
+
+#endif // F_CPU
+
+#endif // CDC_STATUS_INTERFACE && CDC_DATA_INTERFACE
+
 #endif // USBserial_h_

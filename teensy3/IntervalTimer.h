@@ -21,8 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 #ifndef __INTERVALTIMER_H__
 #define __INTERVALTIMER_H__
 
-#include <stdint.h>
-#include "mk20dx128.h"
+#include "kinetis.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,12 +32,17 @@ class IntervalTimer {
     typedef void (*ISR)();
     typedef volatile uint32_t* reg;
     enum {TIMER_OFF, TIMER_PIT};
+#if defined(KINETISK)
     static const uint8_t NUM_PIT = 4;
+#elif defined(KINETISL)
+    static const uint8_t NUM_PIT = 2;
+#endif
     static const uint32_t MAX_PERIOD = UINT32_MAX / (F_BUS / 1000000.0);
     static void enable_PIT();
     static void disable_PIT();
     static bool PIT_enabled;
     static bool PIT_used[NUM_PIT];
+    static ISR PIT_ISR[NUM_PIT];
     bool allocate_PIT(uint32_t newValue);
     void start_PIT(uint32_t newValue);
     void stop_PIT();
@@ -47,10 +51,11 @@ class IntervalTimer {
     reg PIT_LDVAL;
     reg PIT_TCTRL;
     uint8_t IRQ_PIT_CH;
+    uint8_t nvic_priority;
     ISR myISR;
     bool beginCycles(ISR newISR, uint32_t cycles);
-  public: 
-    IntervalTimer() { status = TIMER_OFF; }
+  public:
+    IntervalTimer() { status = TIMER_OFF; nvic_priority = 128; }
     ~IntervalTimer() { end(); }
     bool begin(ISR newISR, unsigned int newPeriod) {
 	if (newPeriod == 0 || newPeriod > MAX_PERIOD) return false;
@@ -77,7 +82,18 @@ class IntervalTimer {
 	return begin(newISR, (float)newPeriod);
     }
     void end();
-    static ISR PIT_ISR[NUM_PIT];
+    void priority(uint8_t n) {
+	nvic_priority = n;
+	if (PIT_enabled) NVIC_SET_PRIORITY(IRQ_PIT_CH, n);
+    }
+#if defined(KINETISK)
+    friend void pit0_isr();
+    friend void pit1_isr();
+    friend void pit2_isr();
+    friend void pit3_isr();
+#elif defined(KINETISL)
+    friend void pit_isr();
+#endif
 };
 
 

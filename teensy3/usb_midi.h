@@ -10,10 +10,10 @@
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  *
- * 1. The above copyright notice and this permission notice shall be 
+ * 1. The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * 2. If the Software is incorporated into a build system that allows 
+ * 2. If the Software is incorporated into a build system that allows
  * selection among a list of target devices, then similar target
  * devices manufactured by PJRC.COM must be included in the list of
  * target devices and selectable in the same manner.
@@ -31,7 +31,9 @@
 #ifndef USBmidi_h_
 #define USBmidi_h_
 
-#if defined(USB_MIDI)
+#include "usb_desc.h"
+
+#if defined(MIDI_INTERFACE)
 
 #include <inttypes.h>
 
@@ -77,6 +79,7 @@ extern void (*usb_midi_handleControlChange)(uint8_t ch, uint8_t control, uint8_t
 extern void (*usb_midi_handleProgramChange)(uint8_t ch, uint8_t program);
 extern void (*usb_midi_handleAfterTouch)(uint8_t ch, uint8_t pressure);
 extern void (*usb_midi_handlePitchChange)(uint8_t ch, int pitch);
+extern void (*usb_midi_handleSysEx)(const uint8_t *data, uint16_t length, uint8_t complete);
 extern void (*usb_midi_handleRealTimeSystem)(uint8_t rtb);
 
 #ifdef __cplusplus
@@ -164,6 +167,9 @@ class usb_midi_class
         inline void setHandlePitchChange(void (*fptr)(uint8_t channel, int pitch)) {
                 usb_midi_handlePitchChange = fptr;
         };
+        inline void setHandleSysEx(void (*fptr)(const uint8_t *data, uint16_t length, bool complete)) {
+                usb_midi_handleSysEx = (void (*)(const uint8_t *, uint16_t, uint8_t))fptr;
+        }
         inline void setHandleRealTimeSystem(void (*fptr)(uint8_t realtimebyte)) {
                 usb_midi_handleRealTimeSystem = fptr;
         };
@@ -175,6 +181,7 @@ extern usb_midi_class usbMIDI;
 
 #endif // __cplusplus
 
-#endif // USB_MIDI
+#endif // MIDI_INTERFACE
+
 #endif // USBmidi_h_
 

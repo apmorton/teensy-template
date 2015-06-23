@@ -36,9 +36,6 @@
 extern "C"{
 #endif
 
-#define true 1
-#define false 0
-
 #define PI 3.1415926535897932384626433832795
 #define HALF_PI 1.5707963267948966192313216916398
 #define TWO_PI 6.283185307179586476925286766559
@@ -60,15 +57,36 @@ extern "C"{
 #undef abs
 #endif
 
-#define min(a,b) ((a)<(b)?(a):(b))
-#define max(a,b) ((a)>(b)?(a):(b))
-#define abs(x) ((x)>0?(x):-(x))
-#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
-#define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
+#define min(a, b) ({ \
+  typeof(a) _a = (a); \
+  typeof(b) _b = (b); \
+  (_a < _b) ? _a : _b; \
+})
+#define max(a, b) ({ \
+  typeof(a) _a = (a); \
+  typeof(b) _b = (b); \
+  (_a > _b) ? _a : _b; \
+})
+#define abs(x) ({ \
+  typeof(x) _x = (x); \
+  (_x > 0) ? _x : -_x; \
+})
+#define constrain(amt, low, high) ({ \
+  typeof(amt) _amt = (amt); \
+  typeof(low) _low = (low); \
+  typeof(high) _high = (high); \
+  (_amt < _low) ? _low : ((_amt > _high) ? _high : _amt); \
+})
+#define round(x) ({ \
+  typeof(x) _x = (x); \
+  (_x>=0) ? (long)(_x+0.5) : (long)(_x-0.5); \
+})
 #define radians(deg) ((deg)*DEG_TO_RAD)
 #define degrees(rad) ((rad)*RAD_TO_DEG)
-#define sq(x) ((x)*(x))
-
+#define sq(x) ({ \
+  typeof(x) _x = (x); \
+  _x * _x; \
+})
 #define sei() __enable_irq()
 #define cli() __disable_irq()
 #define interrupts() __enable_irq()
@@ -90,7 +108,6 @@ typedef unsigned int word;
 
 #define bit(b) (1UL << (b))
 
-typedef uint8_t boolean;
 typedef uint8_t byte;
 
 uint32_t pulseIn(uint8_t pin, uint8_t state, uint32_t timeout);
@@ -107,6 +124,16 @@ void loop(void);
 
 #ifdef __cplusplus
 } // extern "C"
+#endif
+
+// fix C++ boolean issue
+// https://github.com/arduino/Arduino/pull/2151
+#ifdef __cplusplus
+typedef bool boolean;
+#else
+typedef uint8_t boolean;
+#define false 0
+#define true (!false)
 #endif
 
 #endif
