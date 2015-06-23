@@ -31,7 +31,7 @@ ifeq ($(OS),Windows_NT)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
-        TOOLSPATH = /Applications/Arduino.app/Contents/Resources/Java/hardware/tools/
+        TOOLSPATH = /Applications/Arduino.app/Contents/Java/hardware/tools/
     endif
 endif
 
