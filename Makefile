@@ -9,7 +9,7 @@ TEENSY_CORE_SPEED = 48000000
 
 # Some libraries will require this to be defined
 # If you define this, you will break the default main.cpp
-#ARDUINO = 105
+#ARDUINO = 10600
 
 # configurable options
 OPTIONS = -DUSB_SERIAL -DLAYOUT_US_ENGLISH
@@ -42,14 +42,14 @@ COREPATH = teensy3
 LIBRARYPATH = libraries
 
 # path location for the arm-none-eabi compiler
-COMPILERPATH = $(TOOLSPATH)/arm-none-eabi/bin
+COMPILERPATH = $(TOOLSPATH)/arm/bin
 
 #************************************************************************
 # Settings below this point usually do not need to be edited
 #************************************************************************
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH)
+CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DTEENSYDUINO=124 -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH)
 
 # compiler options for C++ only
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
@@ -73,6 +73,8 @@ endif
 # set arduino define if given
 ifdef ARDUINO
 	CPPFLAGS += -DARDUINO=$(ARDUINO)
+else
+	CPPFLAGS += -DUSING_MAKEFILE
 endif
 
 # linker options
