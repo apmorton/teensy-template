@@ -1,7 +1,7 @@
 # The name of your project (used to name the compiled .hex file)
 TARGET = $(notdir $(CURDIR))
 
-# The teensy version to use, 30 or 31
+# The teensy version to use, 30, 31, or LC
 TEENSY = 30
 
 # Set to 24000000, 48000000, or 96000000 to set CPU core speed
@@ -49,7 +49,7 @@ COMPILERPATH = $(TOOLSPATH)/arm/bin
 #************************************************************************
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD $(OPTIONS) -DTEENSYDUINO=124 -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH)
+CPPFLAGS = -Wall -g -Os -mthumb -ffunction-sections -fdata-sections -nostdlib -MMD $(OPTIONS) -DTEENSYDUINO=124 -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH)
 
 # compiler options for C++ only
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
@@ -57,16 +57,31 @@ CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 # compiler options for C only
 CFLAGS =
 
+# linker options
+LDFLAGS = -Os -Wl,--gc-sections -mthumb
+
+# additional libraries to link
+LIBS = -lm
+
 # compiler options specific to teensy version
 ifeq ($(TEENSY), 30)
-    CPPFLAGS += -D__MK20DX128__
+    CPPFLAGS += -D__MK20DX128__ -mcpu=cortex-m4
     LDSCRIPT = $(COREPATH)/mk20dx128.ld
+    LDFLAGS += -mcpu=cortex-m4 -T$(LDSCRIPT)
 else
     ifeq ($(TEENSY), 31)
-        CPPFLAGS += -D__MK20DX256__
+        CPPFLAGS += -D__MK20DX256__ -mcpu=cortex-m4
         LDSCRIPT = $(COREPATH)/mk20dx256.ld
+        LDFLAGS += -mcpu=cortex-m4 -T$(LDSCRIPT)
     else
-        $(error Invalid setting for TEENSY)
+        ifeq ($(TEENSY), LC)
+            CPPFLAGS += -D__MKL26Z64__ -mcpu=cortex-m0plus
+            LDSCRIPT = $(COREPATH)/mkl26z64.ld
+            LDFLAGS += -mcpu=cortex-m0plus -T$(LDSCRIPT)
+            LIBS += -larm_cortexM0l_math
+        else
+            $(error Invalid setting for TEENSY)
+        endif
     endif
 endif
 
@@ -76,12 +91,6 @@ ifdef ARDUINO
 else
 	CPPFLAGS += -DUSING_MAKEFILE
 endif
-
-# linker options
-LDFLAGS = -Os -Wl,--gc-sections -mcpu=cortex-m4 -mthumb -T$(LDSCRIPT)
-
-# additional libraries to link
-LIBS = -lm
 
 # names for the compiler programs
 CC = $(abspath $(COMPILERPATH))/arm-none-eabi-gcc
