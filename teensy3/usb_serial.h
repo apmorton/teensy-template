@@ -53,6 +53,8 @@ int usb_serial_write(const void *buffer, uint32_t size);
 int usb_serial_write_buffer_free(void);
 void usb_serial_flush_output(void);
 extern uint32_t usb_cdc_line_coding[2];
+extern volatile uint32_t usb_cdc_line_rtsdtr_millis;
+extern volatile uint32_t systick_millis_count;
 extern volatile uint8_t usb_cdc_line_rtsdtr;
 extern volatile uint8_t usb_cdc_transmit_flush_timer;
 extern volatile uint8_t usb_configuration;
@@ -75,6 +77,7 @@ public:
         virtual int read() { return usb_serial_getchar(); }
         virtual int peek() { return usb_serial_peekchar(); }
         virtual void flush() { usb_serial_flush_output(); }  // TODO: actually wait for data to leave USB...
+        virtual void clear(void) { usb_serial_flush_input(); }
         virtual size_t write(uint8_t c) { return usb_serial_putchar(c); }
         virtual size_t write(const uint8_t *buffer, size_t size) { return usb_serial_write(buffer, size); }
 	size_t write(unsigned long n) { return write((uint8_t)n); }
@@ -90,7 +93,10 @@ public:
         uint8_t numbits(void) { return usb_cdc_line_coding[1] >> 16; }
         uint8_t dtr(void) { return (usb_cdc_line_rtsdtr & USB_SERIAL_DTR) ? 1 : 0; }
         uint8_t rts(void) { return (usb_cdc_line_rtsdtr & USB_SERIAL_RTS) ? 1 : 0; }
-        operator bool() { return usb_configuration && (usb_cdc_line_rtsdtr & (USB_SERIAL_DTR | USB_SERIAL_RTS)); }
+        operator bool() { return usb_configuration &&
+		(usb_cdc_line_rtsdtr & (USB_SERIAL_DTR | USB_SERIAL_RTS)) &&
+		((uint32_t)(systick_millis_count - usb_cdc_line_rtsdtr_millis) >= 25);
+	}
 	size_t readBytes(char *buffer, size_t length) {
 		size_t count=0;
 		unsigned long startMillis = millis();

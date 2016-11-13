@@ -31,6 +31,8 @@
 #include "core_pins.h"
 //#include "HardwareSerial.h"
 
+#if defined(HAS_KINETIS_TSI) || defined(HAS_KINETIS_TSI_LITE)
+
 #if defined(__MK20DX128__) || defined(__MK20DX256__)
 // These settings give approx 0.02 pF sensitivity and 1200 pF range
 // Lower current, higher number of scans, and higher prescaler
@@ -45,6 +47,17 @@ static const uint8_t pin2tsi[] = {
 255, 255, 255, 255, 255,  13,   0,   6,   8,   7,
 255, 255,  14,  15, 255,  12, 255, 255, 255, 255,
 255, 255,  11,   5
+};
+
+#elif defined(__MK66FX1M0__)
+#define NSCAN     9
+#define PRESCALE  2
+static const uint8_t pin2tsi[] = {
+//0    1    2    3    4    5    6    7    8    9
+  9,  10, 255, 255, 255, 255, 255, 255, 255, 255,
+255, 255, 255, 255, 255,  13,   0,   6,   8,   7,
+255, 255,  14,  15, 255, 255, 255, 255, 255,  11,
+ 12, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
 #elif defined(__MKL26Z64__)
@@ -74,7 +87,7 @@ int touchRead(uint8_t pin)
 
 	*portConfigRegister(pin) = PORT_PCR_MUX(0);
 	SIM_SCGC5 |= SIM_SCGC5_TSI;
-#if defined(KINETISK)
+#if defined(HAS_KINETIS_TSI)
 	TSI0_GENCS = 0;
 	TSI0_PEN = (1 << ch);
 	TSI0_SCANC = TSI_SCANC_REFCHRG(3) | TSI_SCANC_EXTCHRG(CURRENT);
@@ -83,7 +96,7 @@ int touchRead(uint8_t pin)
 	while (TSI0_GENCS & TSI_GENCS_SCNIP) ; // wait
 	delayMicroseconds(1);
 	return *((volatile uint16_t *)(&TSI0_CNTR1) + ch);
-#elif defined(KINETISL)
+#elif defined(HAS_KINETIS_TSI_LITE)
 	TSI0_GENCS = TSI_GENCS_REFCHRG(4) | TSI_GENCS_EXTCHRG(3) | TSI_GENCS_PS(PRESCALE)
 		| TSI_GENCS_NSCN(NSCAN) | TSI_GENCS_TSIEN | TSI_GENCS_EOSF;
 	TSI0_DATA = TSI_DATA_TSICH(ch) | TSI_DATA_SWTS;
@@ -94,6 +107,13 @@ int touchRead(uint8_t pin)
 #endif
 }
 
+#else
 
+int touchRead(uint8_t pin)
+{
+        return 0; // no Touch sensing :(
+}
+
+#endif
 
 

@@ -23,7 +23,7 @@
 //#include <stdio.h>
 //#include <string.h>
 #include <inttypes.h>
-//#include <math.h>
+#include <math.h>
 //#include <avr/pgmspace.h>
 //#include "wiring.h"
 
@@ -88,14 +88,22 @@ int Print::printf(const char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
+#ifdef __STRICT_ANSI__
+	return 0;  // TODO: make this work with -std=c++0x
+#else
 	return vdprintf((int)this, format, ap);
+#endif
 }
 
 int Print::printf(const __FlashStringHelper *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
+#ifdef __STRICT_ANSI__
+	return 0;
+#else
 	return vdprintf((int)this, (const char *)format, ap);
+#endif
 }
 
 #ifdef __MKL26Z64__
@@ -183,7 +191,9 @@ size_t Print::printNumberDec(unsigned long n, uint8_t sign)
 
         p = buf + (sizeof(buf));
         do {
-		divmod10_v2(n, &n, &digit);
+		uint32_t div;
+		divmod10_v2(n, &div, &digit);
+		n = div;
 		//divmod10_asm(n, digit, t1, t2, c3333);
                 *--p = digit + '0';
         } while (n);
@@ -275,6 +285,11 @@ size_t Print::printFloat(double number, uint8_t digits)
 	uint8_t sign=0;
 	size_t count=0;
 
+	if (isnan(number)) return print("nan");
+    	if (isinf(number)) return print("inf");
+    	if (number > 4294967040.0f) return print("ovf");  // constant determined empirically
+    	if (number <-4294967040.0f) return print("ovf");  // constant determined empirically
+	
 	// Handle negative numbers
 	if (number < 0.0) {
 		sign = 1;
@@ -295,7 +310,7 @@ size_t Print::printFloat(double number, uint8_t digits)
 
 	// Print the decimal point, but only if there are digits beyond
 	if (digits > 0) {
-		uint8_t n, buf[8], count=1;
+		uint8_t n, buf[16], count=1;
 		buf[0] = '.';
 
 		// Extract digits from the remainder one at a time

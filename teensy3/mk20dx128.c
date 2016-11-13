@@ -32,6 +32,25 @@
 #include "core_pins.h" // testing only
 #include "ser_print.h" // testing only
 
+
+// Flash Security Setting. On Teensy 3.2, you can lock the MK20 chip to prevent
+// anyone from reading your code.  You CAN still reprogram your Teensy while
+// security is set, but the bootloader will be unable to respond to auto-reboot
+// requests from Arduino. Pressing the program button will cause a full chip
+// erase to gain access, because the bootloader chip is locked out.  Normally,
+// erase occurs when uploading begins, so if you press the Program button
+// accidentally, simply power cycling will run your program again.  When
+// security is locked, any Program button press causes immediate full erase.
+// Special care must be used with the Program button, because it must be made
+// accessible to initiate reprogramming, but it must not be accidentally
+// pressed when Teensy Loader is not being used to reprogram.  To set lock the
+// security change this to 0xDC.  Teensy 3.0 and 3.1 do not support security lock.
+#define FSEC 0xDE
+
+// Flash Options
+#define FOPT 0xF9
+
+
 extern unsigned long _stext;
 extern unsigned long _etext;
 extern unsigned long _sdata;
@@ -151,6 +170,7 @@ void dma_ch14_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void dma_ch15_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void dma_error_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void mcm_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void randnum_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void flash_cmd_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void flash_error_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void low_voltage_isr(void)	__attribute__ ((weak, alias("unused_isr")));
@@ -159,16 +179,27 @@ void watchdog_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void i2c0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void i2c1_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void i2c2_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void i2c3_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void spi0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void spi1_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void spi2_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void sdhc_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void enet_timer_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void enet_tx_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void enet_rx_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void enet_error_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void can0_message_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void can0_bus_off_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void can0_error_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void can0_tx_warn_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void can0_rx_warn_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void can0_wakeup_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void can1_message_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void can1_bus_off_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void can1_error_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void can1_tx_warn_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void can1_rx_warn_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void can1_wakeup_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void i2s0_tx_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void i2s0_rx_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void i2s0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
@@ -185,15 +216,20 @@ void uart4_status_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void uart4_error_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void uart5_status_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void uart5_error_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void lpuart0_status_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void adc0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void adc1_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void cmp0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void cmp1_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void cmp2_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void cmp3_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void ftm0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void ftm1_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void ftm2_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void ftm3_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void tpm0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void tpm1_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void tpm2_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void cmt_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void rtc_alarm_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void rtc_seconds_isr(void)	__attribute__ ((weak, alias("unused_isr")));
@@ -205,6 +241,8 @@ void pit3_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void pdb_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void usb_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void usb_charge_isr(void)	__attribute__ ((weak, alias("unused_isr")));
+void usbhs_isr(void)		__attribute__ ((weak, alias("unused_isr")));
+void usbhs_phy_isr(void)	__attribute__ ((weak, alias("unused_isr")));
 void dac0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void dac1_isr(void)		__attribute__ ((weak, alias("unused_isr")));
 void tsi0_isr(void)		__attribute__ ((weak, alias("unused_isr")));
@@ -224,6 +262,10 @@ __attribute__ ((section(".dmabuffers"), used, aligned(256)))
 __attribute__ ((section(".dmabuffers"), used, aligned(512)))
 #elif defined(__MKL26Z64__)
 __attribute__ ((section(".dmabuffers"), used, aligned(256)))
+#elif defined(__MK64FX512__)
+__attribute__ ((section(".dmabuffers"), used, aligned(512)))
+#elif defined(__MK66FX1M0__)
+__attribute__ ((section(".dmabuffers"), used, aligned(512)))
 #endif
 void (* _VectorsRam[NVIC_NUM_INTERRUPTS+16])(void);
 
@@ -305,11 +347,11 @@ void (* const _VectorsFlash[NVIC_NUM_INTERRUPTS+16])(void) =
 	dma_ch8_isr,					// 24 DMA channel 8 transfer complete
 	dma_ch9_isr,					// 25 DMA channel 9 transfer complete
 	dma_ch10_isr,					// 26 DMA channel 10 transfer complete
-	dma_ch11_isr,					// 27 DMA channel 10 transfer complete
-	dma_ch12_isr,					// 28 DMA channel 10 transfer complete
-	dma_ch13_isr,					// 29 DMA channel 10 transfer complete
-	dma_ch14_isr,					// 30 DMA channel 10 transfer complete
-	dma_ch15_isr,					// 31 DMA channel 10 transfer complete
+	dma_ch11_isr,					// 27 DMA channel 11 transfer complete
+	dma_ch12_isr,					// 28 DMA channel 12 transfer complete
+	dma_ch13_isr,					// 29 DMA channel 13 transfer complete
+	dma_ch14_isr,					// 30 DMA channel 14 transfer complete
+	dma_ch15_isr,					// 31 DMA channel 15 transfer complete
 	dma_error_isr,					// 32 DMA error interrupt channel
 	unused_isr,					// 33 --
 	flash_cmd_isr,					// 34 Flash Memory Command complete
@@ -422,6 +464,194 @@ void (* const _VectorsFlash[NVIC_NUM_INTERRUPTS+16])(void) =
 	software_isr,					// 45 Software interrupt
 	porta_isr,					// 46 Pin detect (Port A)
 	portcd_isr,					// 47 Pin detect (Port C and D)
+#elif defined(__MK64FX512__)
+	dma_ch0_isr,					// 16 DMA channel 0 transfer complete
+	dma_ch1_isr,					// 17 DMA channel 1 transfer complete
+	dma_ch2_isr,					// 18 DMA channel 2 transfer complete
+	dma_ch3_isr,					// 19 DMA channel 3 transfer complete
+	dma_ch4_isr,					// 20 DMA channel 4 transfer complete
+	dma_ch5_isr,					// 21 DMA channel 5 transfer complete
+	dma_ch6_isr,					// 22 DMA channel 6 transfer complete
+	dma_ch7_isr,					// 23 DMA channel 7 transfer complete
+	dma_ch8_isr,					// 24 DMA channel 8 transfer complete
+	dma_ch9_isr,					// 25 DMA channel 9 transfer complete
+	dma_ch10_isr,					// 26 DMA channel 10 transfer complete
+	dma_ch11_isr,					// 27 DMA channel 11 transfer complete
+	dma_ch12_isr,					// 28 DMA channel 12 transfer complete
+	dma_ch13_isr,					// 29 DMA channel 13 transfer complete
+	dma_ch14_isr,					// 30 DMA channel 14 transfer complete
+	dma_ch15_isr,					// 31 DMA channel 15 transfer complete
+	dma_error_isr,					// 32 DMA error interrupt channel
+	mcm_isr,					// 33 MCM
+	flash_cmd_isr,					// 34 Flash Memory Command complete
+	flash_error_isr,				// 35 Flash Read collision
+	low_voltage_isr,				// 36 Low-voltage detect/warning
+	wakeup_isr,					// 37 Low Leakage Wakeup
+	watchdog_isr,					// 38 Both EWM and WDOG interrupt
+	randnum_isr,					// 39 Random Number Generator
+	i2c0_isr,					// 40 I2C0
+	i2c1_isr,					// 41 I2C1
+	spi0_isr,					// 42 SPI0
+	spi1_isr,					// 43 SPI1
+	i2s0_tx_isr,					// 44 I2S0 Transmit
+	i2s0_rx_isr,					// 45 I2S0 Receive
+	unused_isr,					// 46 --
+	uart0_status_isr,				// 47 UART0 status
+	uart0_error_isr,				// 48 UART0 error
+	uart1_status_isr,				// 49 UART1 status
+	uart1_error_isr,				// 50 UART1 error
+	uart2_status_isr,				// 51 UART2 status
+	uart2_error_isr,				// 52 UART2 error
+	uart3_status_isr,				// 53 UART3 status
+	uart3_error_isr,				// 54 UART3 error
+	adc0_isr,					// 55 ADC0
+	cmp0_isr,					// 56 CMP0
+	cmp1_isr,					// 57 CMP1
+	ftm0_isr,					// 58 FTM0
+	ftm1_isr,					// 59 FTM1
+	ftm2_isr,					// 60 FTM2
+	cmt_isr,					// 61 CMT
+	rtc_alarm_isr,					// 62 RTC Alarm interrupt
+	rtc_seconds_isr,				// 63 RTC Seconds interrupt
+	pit0_isr,					// 64 PIT Channel 0
+	pit1_isr,					// 65 PIT Channel 1
+	pit2_isr,					// 66 PIT Channel 2
+	pit3_isr,					// 67 PIT Channel 3
+	pdb_isr,					// 68 PDB Programmable Delay Block
+	usb_isr,					// 69 USB OTG
+	usb_charge_isr,					// 70 USB Charger Detect
+	unused_isr,					// 71 --
+	dac0_isr,					// 72 DAC0
+	mcg_isr,					// 73 MCG
+	lptmr_isr,					// 74 Low Power Timer
+	porta_isr,					// 75 Pin detect (Port A)
+	portb_isr,					// 76 Pin detect (Port B)
+	portc_isr,					// 77 Pin detect (Port C)
+	portd_isr,					// 78 Pin detect (Port D)
+	porte_isr,					// 79 Pin detect (Port E)
+	software_isr,					// 80 Software interrupt
+	spi2_isr,					// 81 SPI2
+	uart4_status_isr,				// 82 UART4 status
+	uart4_error_isr,				// 83 UART4 error
+	uart5_status_isr,				// 84 UART4 status
+	uart5_error_isr,				// 85 UART4 error
+	cmp2_isr,					// 86 CMP2
+	ftm3_isr,					// 87 FTM3
+	dac1_isr,					// 88 DAC1
+	adc1_isr,					// 89 ADC1
+	i2c2_isr,					// 90 I2C2
+	can0_message_isr,				// 91 CAN OR'ed Message buffer (0-15)
+	can0_bus_off_isr,				// 92 CAN Bus Off
+	can0_error_isr,					// 93 CAN Error
+	can0_tx_warn_isr,				// 94 CAN Transmit Warning
+	can0_rx_warn_isr,				// 95 CAN Receive Warning
+	can0_wakeup_isr,				// 96 CAN Wake Up
+	sdhc_isr,					// 97 SDHC
+	enet_timer_isr,					// 98 Ethernet IEEE1588 Timers
+	enet_tx_isr,					// 99 Ethernet Transmit
+	enet_rx_isr,					// 100 Ethernet Receive
+	enet_error_isr,					// 101 Ethernet Error
+#elif defined(__MK66FX1M0__)
+	dma_ch0_isr,					// 16 DMA channel 0 transfer complete
+	dma_ch1_isr,					// 17 DMA channel 1 transfer complete
+	dma_ch2_isr,					// 18 DMA channel 2 transfer complete
+	dma_ch3_isr,					// 19 DMA channel 3 transfer complete
+	dma_ch4_isr,					// 20 DMA channel 4 transfer complete
+	dma_ch5_isr,					// 21 DMA channel 5 transfer complete
+	dma_ch6_isr,					// 22 DMA channel 6 transfer complete
+	dma_ch7_isr,					// 23 DMA channel 7 transfer complete
+	dma_ch8_isr,					// 24 DMA channel 8 transfer complete
+	dma_ch9_isr,					// 25 DMA channel 9 transfer complete
+	dma_ch10_isr,					// 26 DMA channel 10 transfer complete
+	dma_ch11_isr,					// 27 DMA channel 11 transfer complete
+	dma_ch12_isr,					// 28 DMA channel 12 transfer complete
+	dma_ch13_isr,					// 29 DMA channel 13 transfer complete
+	dma_ch14_isr,					// 30 DMA channel 14 transfer complete
+	dma_ch15_isr,					// 31 DMA channel 15 transfer complete
+	dma_error_isr,					// 32 DMA error interrupt channel
+	mcm_isr,					// 33 MCM
+	flash_cmd_isr,					// 34 Flash Memory Command complete
+	flash_error_isr,				// 35 Flash Read collision
+	low_voltage_isr,				// 36 Low-voltage detect/warning
+	wakeup_isr,					// 37 Low Leakage Wakeup
+	watchdog_isr,					// 38 Both EWM and WDOG interrupt
+	randnum_isr,					// 39 Random Number Generator
+	i2c0_isr,					// 40 I2C0
+	i2c1_isr,					// 41 I2C1
+	spi0_isr,					// 42 SPI0
+	spi1_isr,					// 43 SPI1
+	i2s0_tx_isr,					// 44 I2S0 Transmit
+	i2s0_rx_isr,					// 45 I2S0 Receive
+	unused_isr,					// 46 --
+	uart0_status_isr,				// 47 UART0 status
+	uart0_error_isr,				// 48 UART0 error
+	uart1_status_isr,				// 49 UART1 status
+	uart1_error_isr,				// 50 UART1 error
+	uart2_status_isr,				// 51 UART2 status
+	uart2_error_isr,				// 52 UART2 error
+	uart3_status_isr,				// 53 UART3 status
+	uart3_error_isr,				// 54 UART3 error
+	adc0_isr,					// 55 ADC0
+	cmp0_isr,					// 56 CMP0
+	cmp1_isr,					// 57 CMP1
+	ftm0_isr,					// 58 FTM0
+	ftm1_isr,					// 59 FTM1
+	ftm2_isr,					// 60 FTM2
+	cmt_isr,					// 61 CMT
+	rtc_alarm_isr,					// 62 RTC Alarm interrupt
+	rtc_seconds_isr,				// 63 RTC Seconds interrupt
+	pit0_isr,					// 64 PIT Channel 0
+	pit1_isr,					// 65 PIT Channel 1
+	pit2_isr,					// 66 PIT Channel 2
+	pit3_isr,					// 67 PIT Channel 3
+	pdb_isr,					// 68 PDB Programmable Delay Block
+	usb_isr,					// 69 USB OTG
+	usb_charge_isr,					// 70 USB Charger Detect
+	unused_isr,					// 71 --
+	dac0_isr,					// 72 DAC0
+	mcg_isr,					// 73 MCG
+	lptmr_isr,					// 74 Low Power Timer
+	porta_isr,					// 75 Pin detect (Port A)
+	portb_isr,					// 76 Pin detect (Port B)
+	portc_isr,					// 77 Pin detect (Port C)
+	portd_isr,					// 78 Pin detect (Port D)
+	porte_isr,					// 79 Pin detect (Port E)
+	software_isr,					// 80 Software interrupt
+	spi2_isr,					// 81 SPI2
+	uart4_status_isr,				// 82 UART4 status
+	uart4_error_isr,				// 83 UART4 error
+	unused_isr,					// 84 --
+	unused_isr,					// 85 --
+	cmp2_isr,					// 86 CMP2
+	ftm3_isr,					// 87 FTM3
+	dac1_isr,					// 88 DAC1
+	adc1_isr,					// 89 ADC1
+	i2c2_isr,					// 90 I2C2
+	can0_message_isr,				// 91 CAN OR'ed Message buffer (0-15)
+	can0_bus_off_isr,				// 92 CAN Bus Off
+	can0_error_isr,					// 93 CAN Error
+	can0_tx_warn_isr,				// 94 CAN Transmit Warning
+	can0_rx_warn_isr,				// 95 CAN Receive Warning
+	can0_wakeup_isr,				// 96 CAN Wake Up
+	sdhc_isr,					// 97 SDHC
+	enet_timer_isr,					// 98 Ethernet IEEE1588 Timers
+	enet_tx_isr,					// 99 Ethernet Transmit
+	enet_rx_isr,					// 100 Ethernet Receive
+	enet_error_isr,					// 101 Ethernet Error
+	lpuart0_status_isr,				// 102 LPUART
+	tsi0_isr,					// 103 TSI0
+	tpm1_isr,					// 104 FTM1
+	tpm2_isr,					// 105 FTM2
+	usbhs_phy_isr,					// 106 USB-HS Phy
+	i2c3_isr,					// 107 I2C3
+	cmp3_isr,					// 108 CMP3
+	usbhs_isr,					// 109 USB-HS
+	can1_message_isr,				// 110 CAN OR'ed Message buffer (0-15)
+	can1_bus_off_isr,				// 111 CAN Bus Off
+	can1_error_isr,					// 112 CAN Error
+	can1_tx_warn_isr,				// 113 CAN Transmit Warning
+	can1_rx_warn_isr,				// 114 CAN Receive Warning
+	can1_wakeup_isr,				// 115 CAN Wake Up
 #endif
 };
 
@@ -429,7 +659,7 @@ void (* const _VectorsFlash[NVIC_NUM_INTERRUPTS+16])(void) =
 __attribute__ ((section(".flashconfig"), used))
 const uint8_t flashconfigbytes[16] = {
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF
+	0xFF, 0xFF, 0xFF, 0xFF, FSEC, FOPT, 0xFF, 0xFF
 };
 
 
@@ -455,7 +685,12 @@ void startup_early_hook(void)		__attribute__ ((weak, alias("startup_default_earl
 void startup_late_hook(void)		__attribute__ ((weak, alias("startup_default_late_hook")));
 
 
-__attribute__ ((section(".startup")))
+#ifdef __clang__
+// Clang seems to generate slightly larger code with Os than gcc
+__attribute__ ((optimize("-Os")))
+#else
+__attribute__ ((section(".startup"),optimize("-Os")))
+#endif
 void ResetHandler(void)
 {
 	uint32_t *src = &_etext;
@@ -484,10 +719,24 @@ void ResetHandler(void)
 	SIM_SCGC3 = SIM_SCGC3_ADC1 | SIM_SCGC3_FTM2;
 	SIM_SCGC5 = 0x00043F82;		// clocks active to all GPIO
 	SIM_SCGC6 = SIM_SCGC6_RTC | SIM_SCGC6_FTM0 | SIM_SCGC6_FTM1 | SIM_SCGC6_ADC0 | SIM_SCGC6_FTFL;
+#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	SIM_SCGC3 = SIM_SCGC3_ADC1 | SIM_SCGC3_FTM2 | SIM_SCGC3_FTM3;
+	SIM_SCGC5 = 0x00043F82;		// clocks active to all GPIO
+	SIM_SCGC6 = SIM_SCGC6_RTC | SIM_SCGC6_FTM0 | SIM_SCGC6_FTM1 | SIM_SCGC6_ADC0 | SIM_SCGC6_FTFL;
+	//PORTC_PCR5 = PORT_PCR_MUX(1) | PORT_PCR_DSE | PORT_PCR_SRE;
+	//GPIOC_PDDR |= (1<<5);
+	//GPIOC_PSOR = (1<<5);
+	//while (1);
 #elif defined(__MKL26Z64__)
 	SIM_SCGC4 = SIM_SCGC4_USBOTG | 0xF0000030;
 	SIM_SCGC5 = 0x00003F82;		// clocks active to all GPIO
 	SIM_SCGC6 = SIM_SCGC6_ADC0 | SIM_SCGC6_TPM0 | SIM_SCGC6_TPM1 | SIM_SCGC6_TPM2 | SIM_SCGC6_FTFL;
+#endif
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	SCB_CPACR = 0x00F00000;
+#endif
+#if defined(__MK66FX1M0__)
+	LMEM_PCCCR = 0x85000003;
 #endif
 #if 0
 	// testing only, enable ser_print
@@ -512,7 +761,11 @@ void ResetHandler(void)
 
     // since this is a write once register, make it visible to all F_CPU's
     // so we can into other sleep modes in the future at any speed
+#if defined(__MK66FX1M0__)
+	SMC_PMPROT = SMC_PMPROT_AHSRUN | SMC_PMPROT_AVLP | SMC_PMPROT_ALLS | SMC_PMPROT_AVLLS;
+#else
 	SMC_PMPROT = SMC_PMPROT_AVLP | SMC_PMPROT_ALLS | SMC_PMPROT_AVLLS;
+#endif
     
 	// TODO: do this while the PLL is waiting to lock....
 	while (dest < &_edata) *dest++ = *src++;
@@ -556,7 +809,7 @@ void ResetHandler(void)
 #else
     #if defined(KINETISK)
     // enable capacitors for crystal
-    OSC0_CR = OSC_SC8P | OSC_SC2P;
+    OSC0_CR = OSC_SC8P | OSC_SC2P | OSC_ERCLKEN;
     #elif defined(KINETISL)
     // enable capacitors for crystal
     OSC0_CR = OSC_SC8P | OSC_SC2P | OSC_ERCLKEN;
@@ -587,6 +840,42 @@ void ResetHandler(void)
 	//   C2[LP] bit is written to 1
   #else
 	// if we need faster than the crystal, turn on the PLL
+   #if defined(__MK66FX1M0__)
+    #if F_CPU > 120000000
+	SMC_PMCTRL = SMC_PMCTRL_RUNM(3); // enter HSRUN mode
+	while (SMC_PMSTAT != SMC_PMSTAT_HSRUN) ; // wait for HSRUN
+    #endif
+    #if F_CPU == 240000000
+	MCG_C5 = MCG_C5_PRDIV0(0);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(14);
+    #elif F_CPU == 216000000
+	MCG_C5 = MCG_C5_PRDIV0(0);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(11);
+    #elif F_CPU == 192000000
+	MCG_C5 = MCG_C5_PRDIV0(0);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(8);
+    #elif F_CPU == 180000000
+	MCG_C5 = MCG_C5_PRDIV0(1);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(29);
+    #elif F_CPU == 168000000
+	MCG_C5 = MCG_C5_PRDIV0(0);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(5);
+    #elif F_CPU == 144000000
+	MCG_C5 = MCG_C5_PRDIV0(0);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(2);
+    #elif F_CPU == 120000000
+	MCG_C5 = MCG_C5_PRDIV0(1);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(14);
+    #elif F_CPU == 96000000 || F_CPU == 48000000 || F_CPU == 24000000
+	MCG_C5 = MCG_C5_PRDIV0(1);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(8);
+    #elif F_CPU == 72000000
+	MCG_C5 = MCG_C5_PRDIV0(1);
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(2);
+    #elif F_CPU > 16000000
+    #error "MK66FX1M0 does not support this clock speed yet...."
+    #endif
+   #else
     #if F_CPU == 72000000
 	MCG_C5 = MCG_C5_PRDIV0(5);		 // config PLL input for 16 MHz Crystal / 6 = 2.667 Hz
     #else
@@ -600,9 +889,13 @@ void ResetHandler(void)
 	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(6); // config PLL for 120 MHz output
     #elif F_CPU == 72000000
 	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(3); // config PLL for 72 MHz output
-    #else
+    #elif F_CPU == 96000000 || F_CPU == 48000000 || F_CPU == 24000000
 	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(0); // config PLL for 96 MHz output
+    #elif F_CPU > 16000000
+    #error "This clock speed isn't supported..."
     #endif
+   #endif
+
 	// wait for PLL to start using xtal as its input
 	while (!(MCG_S & MCG_S_PLLST)) ;
 	// wait for PLL to lock
@@ -611,80 +904,153 @@ void ResetHandler(void)
   #endif
 #endif
 	// now program the clock dividers
-#if F_CPU == 168000000
-	// config divisors: 168 MHz core, 56 MHz bus, 33.6 MHz flash, USB = 168 * 2 / 7
-	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) |	 SIM_CLKDIV1_OUTDIV4(4);
+#if F_CPU == 240000000
+	// config divisors: 240 MHz core, 60 MHz bus, 30 MHz flash, USB = 240 / 5
+	// TODO: gradual ramp-up for HSRUN mode
+	#if F_BUS == 60000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(3) | SIM_CLKDIV1_OUTDIV4(7);
+	#elif F_BUS == 80000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) | SIM_CLKDIV1_OUTDIV4(7);
+	#elif F_BUS == 120000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(7);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
+	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(4);
+#elif F_CPU == 216000000
+	// config divisors: 216 MHz core, 54 MHz bus, 27 MHz flash, USB = IRC48M
+	// TODO: gradual ramp-up for HSRUN mode
+	#if F_BUS == 54000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(3) | SIM_CLKDIV1_OUTDIV4(7);
+	#elif F_BUS == 72000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) | SIM_CLKDIV1_OUTDIV4(7);
+	#elif F_BUS == 108000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(7);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
+	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(0);
+#elif F_CPU == 192000000
+	// config divisors: 192 MHz core, 48 MHz bus, 27.4 MHz flash, USB = 192 / 4
+	// TODO: gradual ramp-up for HSRUN mode
+	#if F_BUS == 48000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(3) | SIM_CLKDIV1_OUTDIV4(6);
+	#elif F_BUS == 64000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) | SIM_CLKDIV1_OUTDIV4(6);
+	#elif F_BUS == 96000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(6);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
+	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(3);
+#elif F_CPU == 180000000
+	// config divisors: 180 MHz core, 60 MHz bus, 25.7 MHz flash, USB = IRC48M
+	#if F_BUS == 60000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) | SIM_CLKDIV1_OUTDIV4(6);
+	#elif F_BUS == 90000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(6);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
+	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(0);
+#elif F_CPU == 168000000
+	// config divisors: 168 MHz core, 56 MHz bus, 28 MHz flash, USB = 168 * 2 / 7
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) | SIM_CLKDIV1_OUTDIV4(5);
 	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(6) | SIM_CLKDIV2_USBFRAC;
 #elif F_CPU == 144000000
 	// config divisors: 144 MHz core, 48 MHz bus, 28.8 MHz flash, USB = 144 / 3
-	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) |	 SIM_CLKDIV1_OUTDIV4(4);
+	#if F_BUS == 48000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(2) | SIM_CLKDIV1_OUTDIV4(4);
+	#elif F_BUS == 72000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(4);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
 	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(2);
 #elif F_CPU == 120000000
 	// config divisors: 120 MHz core, 60 MHz bus, 24 MHz flash, USB = 128 * 2 / 5
-	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) |	 SIM_CLKDIV1_OUTDIV4(4);
+	#if F_BUS == 60000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(4);
+	#elif F_BUS == 120000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) | SIM_CLKDIV1_OUTDIV4(4);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
 	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(4) | SIM_CLKDIV2_USBFRAC;
 #elif F_CPU == 96000000
 	// config divisors: 96 MHz core, 48 MHz bus, 24 MHz flash, USB = 96 / 2
-	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) |	 SIM_CLKDIV1_OUTDIV4(3);
+	#if F_BUS == 48000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(3);
+	#elif F_BUS == 96000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) | SIM_CLKDIV1_OUTDIV4(3);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
 	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(1);
 #elif F_CPU == 72000000
 	// config divisors: 72 MHz core, 36 MHz bus, 24 MHz flash, USB = 72 * 2 / 3
-	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) |	 SIM_CLKDIV1_OUTDIV4(2);
+	#if F_BUS == 36000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(2);
+	#elif F_BUS == 72000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) | SIM_CLKDIV1_OUTDIV4(2);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
 	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(2) | SIM_CLKDIV2_USBFRAC;
 #elif F_CPU == 48000000
 	// config divisors: 48 MHz core, 48 MHz bus, 24 MHz flash, USB = 96 / 2
-	#if defined(KINETISK)
-	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(1) | SIM_CLKDIV1_OUTDIV2(1) |	 SIM_CLKDIV1_OUTDIV4(3);
+  #if defined(KINETISK)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(1) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV3(1) |  SIM_CLKDIV1_OUTDIV4(3);
 	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(1);
-	#elif defined(KINETISL)
+  #elif defined(KINETISL)
 	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(1) | SIM_CLKDIV1_OUTDIV4(1);
-	#endif
+  #endif
 #elif F_CPU == 24000000
 	// config divisors: 24 MHz core, 24 MHz bus, 24 MHz flash, USB = 96 / 2
 	#if defined(KINETISK)
-	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3) | SIM_CLKDIV1_OUTDIV2(3) |	 SIM_CLKDIV1_OUTDIV4(3);
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3) | SIM_CLKDIV1_OUTDIV2(3) | SIM_CLKDIV1_OUTDIV3(3) | SIM_CLKDIV1_OUTDIV4(3);
 	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(1);
 	#elif defined(KINETISL)
 	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3) | SIM_CLKDIV1_OUTDIV4(0);
 	#endif
 #elif F_CPU == 16000000
 	// config divisors: 16 MHz core, 16 MHz bus, 16 MHz flash
-#if defined(KINETISK)
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) |	 SIM_CLKDIV1_OUTDIV4(0);
-#elif defined(KINETISL)
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV4(0);
-#endif
+  #if defined(KINETISK)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) | SIM_CLKDIV1_OUTDIV3(0) | SIM_CLKDIV1_OUTDIV4(0);
+  #elif defined(KINETISL)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV4(0);
+  #endif
 #elif F_CPU == 8000000
 	// config divisors: 8 MHz core, 8 MHz bus, 8 MHz flash
-#if defined(KINETISK)
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(1) | SIM_CLKDIV1_OUTDIV2(1) |	 SIM_CLKDIV1_OUTDIV4(1);
-#elif defined(KINETISL)
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(1) | SIM_CLKDIV1_OUTDIV4(0);
-#endif
+  #if defined(KINETISK)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(1) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV3(1) | SIM_CLKDIV1_OUTDIV4(1);
+  #elif defined(KINETISL)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(1) | SIM_CLKDIV1_OUTDIV4(0);
+  #endif
 #elif F_CPU == 4000000
-    // config divisors: 4 MHz core, 4 MHz bus, 2 MHz flash
-    // since we are running from external clock 16MHz
-    // fix outdiv too -> cpu 16/4, bus 16/4, flash 16/4
-    // here we can go into vlpr?
+	// config divisors: 4 MHz core, 4 MHz bus, 2 MHz flash
+	// since we are running from external clock 16MHz
+	// fix outdiv too -> cpu 16/4, bus 16/4, flash 16/4
+	// here we can go into vlpr?
 	// config divisors: 4 MHz core, 4 MHz bus, 4 MHz flash
-#if defined(KINETISK)
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3) | SIM_CLKDIV1_OUTDIV2(3) |	 SIM_CLKDIV1_OUTDIV4(3);
-#elif defined(KINETISL)
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3) | SIM_CLKDIV1_OUTDIV4(0);
-#endif
+  #if defined(KINETISK)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3) | SIM_CLKDIV1_OUTDIV2(3) | SIM_CLKDIV1_OUTDIV3(3) | SIM_CLKDIV1_OUTDIV4(3);
+  #elif defined(KINETISL)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3) | SIM_CLKDIV1_OUTDIV4(0);
+  #endif
 #elif F_CPU == 2000000
-    // since we are running from the fast internal reference clock 4MHz
-    // but is divided down by 2 so we actually have a 2MHz, MCG_SC[FCDIV] default is 2
-    // fix outdiv -> cpu 2/1, bus 2/1, flash 2/2
+	// since we are running from the fast internal reference clock 4MHz
+	// but is divided down by 2 so we actually have a 2MHz, MCG_SC[FCDIV] default is 2
+	// fix outdiv -> cpu 2/1, bus 2/1, flash 2/2
 	// config divisors: 2 MHz core, 2 MHz bus, 1 MHz flash
-#if defined(KINETISK)
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) |	 SIM_CLKDIV1_OUTDIV4(1);
-#elif defined(KINETISL)
-    // config divisors: 2 MHz core, 1 MHz bus, 1 MHz flash
-    SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV4(1);
-#endif
+  #if defined(KINETISK)
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) | SIM_CLKDIV1_OUTDIV4(1);
+  #elif defined(KINETISL)
+	// config divisors: 2 MHz core, 1 MHz bus, 1 MHz flash
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV4(1);
+  #endif
 #else
-#error "Error, F_CPU must be 168, 144, 120, 96, 72, 48, 24, 16, 8, 4, or 2 MHz"
+#error "Error, F_CPU must be 192, 180, 168, 144, 120, 96, 72, 48, 24, 16, 8, 4, or 2 MHz"
 #endif
 
 #if F_CPU > 16000000
@@ -695,8 +1061,11 @@ void ResetHandler(void)
 	// now we're in PEE mode
 	// USB uses PLL clock, trace is CPU clock, CLKOUT=OSCERCLK0
 	#if defined(KINETISK)
-	SIM_SOPT2 = SIM_SOPT2_USBSRC | SIM_SOPT2_PLLFLLSEL | SIM_SOPT2_TRACECLKSEL
-		| SIM_SOPT2_CLKOUTSEL(6);
+	#if F_CPU == 216000000 || F_CPU == 180000000
+	SIM_SOPT2 = SIM_SOPT2_USBSRC | SIM_SOPT2_IRC48SEL | SIM_SOPT2_TRACECLKSEL | SIM_SOPT2_CLKOUTSEL(6);
+	#else
+	SIM_SOPT2 = SIM_SOPT2_USBSRC | SIM_SOPT2_PLLFLLSEL | SIM_SOPT2_TRACECLKSEL | SIM_SOPT2_CLKOUTSEL(6);
+	#endif
 	#elif defined(KINETISL)
 	SIM_SOPT2 = SIM_SOPT2_USBSRC | SIM_SOPT2_PLLFLLSEL | SIM_SOPT2_CLKOUTSEL(6)
 		| SIM_SOPT2_UART0SRC(1) | SIM_SOPT2_TPMSRC(1);
@@ -852,4 +1221,96 @@ int nvic_execution_priority(void)
 	if (basepri > 0 && basepri < priority) priority = basepri;
 	return priority;
 }
+
+
+#if defined(HAS_KINETIS_HSRUN) && F_CPU > 120000000
+int kinetis_hsrun_disable(void)
+{
+	if (SMC_PMSTAT == SMC_PMSTAT_HSRUN) {
+		// First, reduce the CPU clock speed, but do not change
+		// the peripheral speed (F_BUS).  Serial1 & Serial2 baud
+		// rates will be impacted, but most other peripherals
+		// will continue functioning at the same speed.
+		#if F_CPU == 240000000 && F_BUS == 60000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 3, 1, 7); // ok
+		#elif F_CPU == 240000000 && F_BUS == 80000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(2, 2, 2, 8); // ok
+		#elif F_CPU == 240000000 && F_BUS == 120000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 1, 1, 7); // ok
+		#elif F_CPU == 216000000 && F_BUS == 54000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 3, 1, 7); // ok
+		#elif F_CPU == 216000000 && F_BUS == 72000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(2, 2, 2, 8); // ok
+		#elif F_CPU == 216000000 && F_BUS == 108000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 1, 1, 7); // ok
+		#elif F_CPU == 192000000 && F_BUS == 48000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 3, 1, 7); // ok
+		#elif F_CPU == 192000000 && F_BUS == 64000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(2, 2, 2, 8); // ok
+		#elif F_CPU == 192000000 && F_BUS == 96000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 1, 1, 7); // ok
+		#elif F_CPU == 180000000 && F_BUS == 60000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(2, 2, 2, 8); // ok
+		#elif F_CPU == 180000000 && F_BUS == 90000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 1, 1, 7); // ok
+		#elif F_CPU == 168000000 && F_BUS == 56000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(2, 2, 2, 5); // ok
+		#elif F_CPU == 144000000 && F_BUS == 48000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(2, 2, 2, 5); // ok
+		#elif F_CPU == 144000000 && F_BUS == 72000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(1, 1, 1, 5); // ok
+		#else
+			return 0;
+		#endif
+		// Then turn off HSRUN mode
+		SMC_PMCTRL = SMC_PMCTRL_RUNM(0);
+		while (SMC_PMSTAT == SMC_PMSTAT_HSRUN) ; // wait
+		return 1;
+	}
+	return 0;
+}
+
+int kinetis_hsrun_enable(void)
+{
+	if (SMC_PMSTAT == SMC_PMSTAT_RUN) {
+		// Turn HSRUN mode on
+		SMC_PMCTRL = SMC_PMCTRL_RUNM(3);
+		while (SMC_PMSTAT != SMC_PMSTAT_HSRUN) ; // wait
+		// Then configure clock for full speed
+		#if F_CPU == 240000000 && F_BUS == 60000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 3, 0, 7);
+		#elif F_CPU == 240000000 && F_BUS == 80000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 2, 0, 7);
+		#elif F_CPU == 240000000 && F_BUS == 120000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 1, 0, 7);
+		#elif F_CPU == 216000000 && F_BUS == 54000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 3, 0, 7);
+		#elif F_CPU == 216000000 && F_BUS == 72000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 2, 0, 7);
+		#elif F_CPU == 216000000 && F_BUS == 108000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 1, 0, 7);
+		#elif F_CPU == 192000000 && F_BUS == 48000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 3, 0, 6);
+		#elif F_CPU == 192000000 && F_BUS == 64000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 2, 0, 6);
+		#elif F_CPU == 192000000 && F_BUS == 96000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 1, 0, 6);
+		#elif F_CPU == 180000000 && F_BUS == 60000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 2, 0, 6);
+		#elif F_CPU == 180000000 && F_BUS == 90000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 1, 0, 6);
+		#elif F_CPU == 168000000 && F_BUS == 56000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 2, 0, 5);
+		#elif F_CPU == 144000000 && F_BUS == 48000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 2, 0, 4);
+		#elif F_CPU == 144000000 && F_BUS == 72000000
+			SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIVS(0, 1, 0, 4);
+		#else
+			return 0;
+		#endif
+		return 1;
+	}
+	return 0;
+}
+#endif // HAS_KINETIS_HSRUN && F_CPU > 120000000
 

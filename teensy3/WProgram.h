@@ -29,9 +29,12 @@
 #include "usb_midi.h"
 #include "usb_rawhid.h"
 #include "usb_flightsim.h"
+#include "usb_mtp.h"
+#include "usb_audio.h"
+#include "usb_touch.h"
 #include "usb_undef.h" // do not allow usb_desc.h stuff to leak to user programs
 
-//#include "WCharacter.h"
+#include "WCharacter.h"
 #include "WString.h"
 #include "elapsedMillis.h"
 #include "IntervalTimer.h"
@@ -47,7 +50,7 @@ void tone(uint8_t pin, uint16_t frequency, uint32_t duration = 0);
 void noTone(uint8_t pin);
 
 // WMath prototypes
-uint32_t random(void);
+int32_t random(void);
 uint32_t random(uint32_t howbig);
 int32_t random(int32_t howsmall, int32_t howbig);
 void randomSeed(uint32_t newseed);
@@ -60,7 +63,7 @@ long map(long, long, long, long, long);
 
 
 // Fast memcpy
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 #ifdef __cplusplus
 extern "C" {
 extern void *memcpy (void *dst, const void *src, size_t count);

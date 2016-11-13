@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2013 PJRC.COM, LLC.
+ * Copyright (c) 2016 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -50,8 +50,10 @@ void usb_keyboard_release_keycode(uint16_t n);
 void usb_keyboard_release_all(void);
 int usb_keyboard_press(uint8_t key, uint8_t modifier);
 int usb_keyboard_send(void);
+#ifdef KEYMEDIA_INTERFACE
+void usb_keymedia_release_all(void);
+#endif
 extern uint8_t keyboard_modifier_keys;
-extern uint8_t keyboard_media_keys;
 extern uint8_t keyboard_keys[6];
 extern uint8_t keyboard_protocol;
 extern uint8_t keyboard_idle_config;
@@ -78,14 +80,20 @@ public:
         size_t write(int n) { return write((uint8_t)n); }
 	using Print::write;
 	void write_unicode(uint16_t n) { usb_keyboard_write_unicode(n); }
-	void set_modifier(uint8_t c) { keyboard_modifier_keys = c; }
+	void set_modifier(uint16_t c) { keyboard_modifier_keys = (uint8_t)c; }
 	void set_key1(uint8_t c) { keyboard_keys[0] = c; }
 	void set_key2(uint8_t c) { keyboard_keys[1] = c; }
 	void set_key3(uint8_t c) { keyboard_keys[2] = c; }
 	void set_key4(uint8_t c) { keyboard_keys[3] = c; }
 	void set_key5(uint8_t c) { keyboard_keys[4] = c; }
 	void set_key6(uint8_t c) { keyboard_keys[5] = c; }
-	void set_media(uint8_t c) { keyboard_media_keys = c; }
+	void set_media(uint16_t c) {
+		if (c == 0) {
+			usb_keymedia_release_all();
+		} else if (c >= 0xE400 && c <= 0xE7FF) {
+			press(c);
+		}
+	}
 	void send_now(void) { usb_keyboard_send(); }
 	void press(uint16_t n) { usb_keyboard_press_keycode(n); }
 	void release(uint16_t n) { usb_keyboard_release_keycode(n); }
