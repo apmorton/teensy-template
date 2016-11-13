@@ -1,7 +1,7 @@
 # The name of your project (used to name the compiled .hex file)
 TARGET = $(notdir $(CURDIR))
 
-# The teensy version to use, 30, 31, or LC
+# The teensy version to use, 30, 31, 35, 36, or LC
 TEENSY = 30
 
 # Set to 24000000, 48000000, or 96000000 to set CPU core speed
@@ -68,21 +68,27 @@ ifeq ($(TEENSY), 30)
     CPPFLAGS += -D__MK20DX128__ -mcpu=cortex-m4
     LDSCRIPT = $(COREPATH)/mk20dx128.ld
     LDFLAGS += -mcpu=cortex-m4 -T$(LDSCRIPT)
+else ifeq ($(TEENSY), 31)
+    CPPFLAGS += -D__MK20DX256__ -mcpu=cortex-m4
+    LDSCRIPT = $(COREPATH)/mk20dx256.ld
+    LDFLAGS += -mcpu=cortex-m4 -T$(LDSCRIPT)
+else ifeq ($(TEENSY), LC)
+    CPPFLAGS += -D__MKL26Z64__ -mcpu=cortex-m0plus
+    LDSCRIPT = $(COREPATH)/mkl26z64.ld
+    LDFLAGS += -mcpu=cortex-m0plus -T$(LDSCRIPT)
+    LIBS += -larm_cortexM0l_math
+else ifeq ($(TEENSY), 35)
+    CPPFLAGS += -D__MK64FX512__ -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
+    LDSCRIPT = $(COREPATH)/mk64fx512.ld
+    LDFLAGS += -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(LDSCRIPT)
+    LIBS += -larm_cortexM4lf_math
+else ifeq ($(TEENSY), 36)
+    CPPFLAGS += -D__MK66FX1M0__ -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
+    LDSCRIPT = $(COREPATH)/mk66fx1m0.ld
+    LDFLAGS += -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(LDSCRIPT)
+    LIBS += -larm_cortexM4lf_math
 else
-    ifeq ($(TEENSY), 31)
-        CPPFLAGS += -D__MK20DX256__ -mcpu=cortex-m4
-        LDSCRIPT = $(COREPATH)/mk20dx256.ld
-        LDFLAGS += -mcpu=cortex-m4 -T$(LDSCRIPT)
-    else
-        ifeq ($(TEENSY), LC)
-            CPPFLAGS += -D__MKL26Z64__ -mcpu=cortex-m0plus
-            LDSCRIPT = $(COREPATH)/mkl26z64.ld
-            LDFLAGS += -mcpu=cortex-m0plus -T$(LDSCRIPT)
-            LIBS += -larm_cortexM0l_math
-        else
-            $(error Invalid setting for TEENSY)
-        endif
-    endif
+    $(error Invalid setting for TEENSY)
 endif
 
 # set arduino define if given
