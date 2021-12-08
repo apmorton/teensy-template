@@ -16,6 +16,19 @@ struct console_ctx
 
 static struct console_ctx ctx = { 0 };
 
+static char map_cell_type_to_char(enum cell_type type)
+{
+    const char char_map[] = 
+    {
+        [CELL_TYPE_EMPTY]       = ' ',
+        [CELL_TYPE_OBSTACLE]    = 'W',
+        [CELL_TYPE_FRUIT]       = 'F',
+        [CELL_TYPE_SNAKE]       = 'S'
+    };
+
+    return char_map[type];
+}
+
 bool diplay_console_init(int x, int y)
 {
     ctx.x = x;
@@ -36,19 +49,6 @@ bool display_console_update(void)
     }
 
     return true;
-}
-
-char map_cell_type_to_char(enum cell_type type)
-{
-    const char char_map[] = 
-    {
-        [CELL_TYPE_EMPTY]       = ' ',
-        [CELL_TYPE_OBSTACLE]    = 'W',
-        [CELL_TYPE_FRUIT]       = 'F',
-        [CELL_TYPE_SNAKE]       = 'S'
-    };
-
-    return char_map[type];
 }
 
 bool display_console_draw_cell(int x, int y, enum cell_type type)

@@ -14,7 +14,8 @@ bool hal_setup(void)
     pinMode(HAL_KEYPAD_MIDDLE, INPUT_PULLUP);
 
     /* LCD TFT */
-
+    pinMode(TFT_BL, OUTPUT);
+    digitalWrite(TFT_BL, HIGH);
 
     return true;
 }

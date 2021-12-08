@@ -261,7 +261,7 @@ struct game_ctx *game_init(rand_clbk rand, get_ms_clbk get_ms)
         return NULL;
     }
 
-    game_ctx.display = get_interface(DISPLAY_INTERFACE_TYPE_CONSOLE);
+    game_ctx.display = get_interface(DISPLAY_INTERFACE_TYPE_ST7735_TFT);
     if (game_ctx.display == NULL)
     {
         LOG("Unsupported display chosen\r\n");
