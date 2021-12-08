@@ -166,15 +166,13 @@ bool game_process(struct game_ctx *ctx)
     int x = 0;
     int y = 0;
     snake_get_node(ctx->snake, 0, &x, &y);
-    LOG("curr head x%d y%d ", x, y);
     x += ctx->change_x;
     y += ctx->change_y;
-    LOG("next head x%d y%d\r\n", x, y);
 
     if (gameboard_cell_get(ctx->board, x, y) == CELL_TYPE_OBSTACLE ||
         gameboard_cell_get(ctx->board, x, y) == CELL_TYPE_SNAKE)
     {
-        LOG("GAME_OVER\r\n");
+        LOG("GAME_OVER\r\nScore: %d", ctx->score);
         ctx->game_over = true;
         ctx->display->display_score(ctx->score);
         return false;
