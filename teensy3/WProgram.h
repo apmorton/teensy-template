@@ -18,6 +18,9 @@
 #define DMAMEM __attribute__ ((section(".dmabuffers"), used))
 #define FASTRUN __attribute__ ((section(".fastrun"), noinline, noclone ))
 
+void randomSeed_C(uint32_t newseed);
+int32_t random_C(int32_t howsmall, int32_t howbig);
+
 #ifdef __cplusplus
 
 #include "avr_emulation.h"
@@ -60,7 +63,6 @@ long map(long, long, long, long, long);
 #include "pins_arduino.h"
 
 #endif // __cplusplus
-
 
 // Fast memcpy
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
