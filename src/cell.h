@@ -1,3 +1,10 @@
+/** @file cell.h
+ *  @brief Cell type common definition.
+ *
+ *  @author Szymon (SP)
+ *  @bug No known bugs.
+ *  @todo add snake head with direction
+ */
 #ifndef CELL_H
 #define CELL_H
 
@@ -15,8 +22,6 @@ enum cell_type
 
 struct cell
 {
-//    uint8_t x;
-//    uint8_t y;
     enum cell_type type;
 };
 

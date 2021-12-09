@@ -1,3 +1,11 @@
+/** @file dbg.h
+ *  @brief Trivial print implementation.
+ *
+ *  @author Szymon (SP)
+ *  @bug No known bugs.
+ *  @todo Finished.
+ */
+
 #ifndef DBG_H
 #define DBG_H
 

@@ -1,3 +1,14 @@
+/** @file display_interface.h
+ *  @brief Interface methods placeholder and getter.
+ *
+ *  This exhibits interface needed to display a 
+ *  XY board game.
+ *
+ *  @author Szymon (SP)
+ *  @bug No known bugs.
+ *  @todo -
+ */
+
 #ifndef DISPLAY_INTERFACE_H
 #define DISPLAY_INTERFACE_H
 

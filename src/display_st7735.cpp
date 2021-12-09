@@ -2,10 +2,11 @@
 #include <string.h>
 #include "Arduino.h"
 #include "display_st7735.h"
-//#include <Adafruit_GFX.h>
 #include "ST7735_t3.h"
 #include "hal.h"
 #include "dbg.h"
+
+#define XY_SIZE_SUPPORTED   (10)
 
 #define RGB(r,g,b) (b<<11|g<<6|r)
 #define SETCOLOR(c) disp.setTextColor(c, bg ? ST7735_BLACK : c);
@@ -16,7 +17,7 @@ struct st7735_ctx
 {
     int x;
     int y;
-    char buff[10][10];
+    char buff[XY_SIZE_SUPPORTED][XY_SIZE_SUPPORTED];
 };
 
 static struct st7735_ctx ctx = { 0 };
@@ -36,6 +37,9 @@ static char map_cell_type_to_char(enum cell_type type)
 
 bool diplay_st7735_init(int x, int y)
 {
+    if (x != XY_SIZE_SUPPORTED || y != XY_SIZE_SUPPORTED)
+        return false;
+
     ctx.x = x;
     ctx.y = y;
     disp.initR(INITR_BLACKTAB);

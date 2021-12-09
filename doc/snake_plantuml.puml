@@ -1,0 +1,99 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title System Context diagram for Snake Game project
+
+Person(pPlayer, "Player", "Game enthusiast")
+
+System_Boundary(c1, "Snake game project") {
+    System(sTeensy, "Teensy 3.2", "Arduino like ARM platform")
+    System(sTFT, "TFT Screen", "1.8 inch 128x160 st7735 by waveshare")
+    System(sKeyboard, "Keypad", "Custom keyboard with 5 tact-switches mounted to provide up, down, left, right and enter")
+}
+
+
+
+Rel(pPlayer, sKeyboard, "presses keys")
+Rel(sTFT, pPlayer, "outputs game screen")
+Rel(sKeyboard, sTeensy, "electrical signal", "active low")
+Rel(sTeensy, sTFT, "drives tft", "SPI")
+
+
+SHOW_FLOATING_LEGEND()
+@enduml
+
+
+
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container diagram of Teensy 3.2 firmware
+
+System(sTFT, "TFT Screen", "1.8 inch 128x160 st7735 by waveshare")
+System(sKeyboard, "Keypad", "Custom keyboard with 5 tact-switches mounted to provide up, down, left, right and enter")
+
+Boundary(c1, "Teensy 3.2") {
+    Container(sSnake, "Snake Game", "Takes input, processes game round, puts output.")
+    Container(sMain, "Main loop", "Inits, pools keys, schedules game process")
+}
+
+Rel(sMain, sSnake, "uses", "Provides input for game.\nCalls game process")
+Rel(sSnake, sTFT, "uses", "output")
+Rel(sKeyboard, sMain, "uses", "input")
+
+SHOW_FLOATING_LEGEND()
+@enduml
+
+
+
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component diagram of Snake Game
+
+System(sTFT, "TFT Screen", "1.8 inch 128x160 st7735 by waveshare")
+System(sKeyboard, "Keypad", "Custom keyboard with 5 tact-switches mounted to provide up, down, left, right and enter")
+
+Boundary(c1, "Teensy 3.2") {
+    Container(sMain, "Main loop", "Inits, pools keys, schedules game process")
+
+Boundary(c2, "Snake Game") {
+    Component(cGame, "Game", "game.c", "Game Logic and modules mediator.")
+    Component(cGameboard, "Board", "gameboard.c", "Game board cells container.")
+    Component(cCell, "Board Cell", "cell.h", "Board cell definition.")
+    Component(cDispIface, "Display Interface", "display_interface.c", "Interface definition and getter for board display interface.")
+    Component(cDispConsole, "Display Console", "display_console.c", "Debug console display implementation.")
+
+    Component(cDbg, "Debug output", "dbg.c", "Trivial print implementation.")
+    Component(cUsb, "USB CDC", "usb_serial.c", "USB serial driver.")
+    Component(cUtils, "Utils", "utils.c", "Pseudo-scheduler.")
+    Component(cSnake, "Snake", "snake.c", "Snake container.")
+
+    Component(cDispTft, "Display TFT", "display_st7735.c", "TFT st7725 display interface implementation.")
+    Component(cDriverTFT, "Driver st7735", "ST7725_t3.c", "TFT st7725 driver.")
+    Component(cDriverSPI, "Driver SPI", "SPI.c", "SPI interface driver.")
+}
+}
+
+Rel(cDispIface, cDispConsole, "uses")
+Rel(cDispIface, cCell, "uses")
+Rel(cDispIface, cDispTft, "uses")
+Rel(cDispConsole, cDbg, "uses")
+Rel(cDbg, cUsb, "uses")
+Rel(cDispTft, cDriverTFT, "uses")
+Rel(cDriverTFT, cDriverSPI, "uses")
+
+Rel(cGame, cGameboard, "uses")
+Rel(cGame, cSnake, "uses")
+Rel(cGame, cDispIface, "uses")
+Rel(cGame, cUtils, "uses")
+
+Rel(cGameboard, cCell, "uses")
+
+Rel(cDriverSPI, sTFT, "Output")
+Rel(sMain, cGame, "uses", "Puts key input, calls process()")
+Rel(sMain, cGame, "inits", "Sets callbacks rand() and get_systic()")
+Rel(sKeyboard, sMain, "Input")
+
+SHOW_FLOATING_LEGEND()
+@enduml

@@ -1,3 +1,11 @@
+/** @file hal.h
+ *  @brief Teensy pin defs and pin setups.
+ *
+ *  @author Szymon (SP)
+ *  @bug -
+ *  @todo -
+ */
+
 #ifndef HAL_H
 #define HAL_H
 

@@ -1,3 +1,14 @@
+/** @file game.h
+ *  @brief Snake game engine.
+ *
+ *  Function process() need to be called periodically to 
+ *  process internal logic. Function input() is async.
+ *
+ *  @author Szymon (SP)
+ *  @bug -
+ *  @todo -
+ */
+
 #ifndef GAME_H
 #define GAME_H
 

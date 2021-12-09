@@ -1,3 +1,11 @@
+/** @file snake.h
+ *  @brief Snake container with getters for nodes and move ability.
+ *
+ *  @author Szymon (SP)
+ *  @bug Not tested for any other than 10x10 board sizes.
+ *  @todo -
+ */
+
 #ifndef SNAKE_H
 #define SNAKE_H
 

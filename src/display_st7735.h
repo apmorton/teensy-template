@@ -1,10 +1,17 @@
+/** @file display_st7735.h
+ *  @brief TFT display st7735 driver interface implementation.
+ *
+ *  @author Szymon (SP)
+ *  @bug Doesnt work for any other XY than 10x10.
+ *  @todo Prettify cell drawing implementation.
+ *  @todo Support for other XY sizes than 10 x 10 fields.
+ */
+
 #ifndef DISPLAY_ST7735_H
 #define DISPLAY_ST7735_H
 
 #include <stdbool.h>
-
 #include "cell.h"
-
 
 #ifdef __cplusplus
 extern "C"

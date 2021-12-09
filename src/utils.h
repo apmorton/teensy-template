@@ -1,3 +1,11 @@
+/** @file utils.h
+ *  @brief Common utility functions placeholder.
+ *
+ *  @author Szymon (SP)
+ *  @bug -
+ *  @todo -
+ */
+
 #ifndef UTILS_H
 #define UTILS_H
 

@@ -1,3 +1,11 @@
+/** @file gameboard.h
+ *  @brief Gameboard XY cells container.
+ *
+ *  @author Szymon (SP)
+ *  @bug -
+ *  @todo - XY common interface???
+ */
+
 #ifndef GAMEBOARD_H
 #define GAMEBOARD_H
 
