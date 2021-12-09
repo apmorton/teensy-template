@@ -1,6 +1,18 @@
 Teensy 3.X Project Template
 ===========================
 
+DOC - C4 model
+-------
+
+System Context:
+![alt text](http://www.plantuml.com/plantuml/png/NP5DRnD138Rl-ojCJgcK3z9IMd5g26seIDke2U8OJNQSxD3vM8qzILU8_uw7ZLXW3Yll-F7hUUqROXKvELkyCRwqIIDKp3Lz68-ZEexsXgkqJOIn39xHywWCRbnRvNFDa5XRintFtWsN-UhhmsBi5356kThCf48PZt5KP_s23Lk4LIDv1pc9hmpQg7rK3dOXmigh5uIvSWXr3D-nvA9OOgJW-xNeDnW7q6k3daI_GVJoG3BIj7TM5AtuvcD8NglOzCk9SAtilfCL57uK8AVb-xH6zDG8smPmCJhF7QPH9-C3M2C2q-S74ECiBtNIwv_okxNGyeLL6KKXrqv6ro0JhM1oVlqwUVyMYA-kBYvXsy1H7P0g5V4_cI_OR8EAMgebh9NEEhD471oyd79mb8t09R0gUKZoKrP8uCGmemOEsUB1Q8HK3q27en-0nHqF89fznQ2y1XGqIkkVXPndjDrm_tv17P48AJScWOKx-UnM4HBNYQaTBRNEJsGdrCqMBPOSJQaiaDbxPRCziM4E23OSJwL_-DDKTPGy0UyuuwlblN2owCzFtpPtYwVf-lvnlbdSpcyVF_NFYXlqEZdx2m00)
+
+Containers:
+
+Components:
+
+
+
 Forked repo.
 
 Purpose
