@@ -1,5 +1,5 @@
-Teensy 3.X Project Template
-===========================
+Forked repo - used as build system for simple snake game. Thanks for the creator for sharing!:) 
+Added c4 model doc, ATM rest is left as it was (when forked). 
 
 DOC - C4 model
 -------
@@ -14,9 +14,10 @@ Containers:
 
 Components:
 
+![alt text](http://www.plantuml.com/plantuml/png/XPLVRo8t4C3VzrDCUGA9G9CqlLEVhe6x53MNH8MeZyXhcyMATxtoU9EYgj-zCvZ52wpQH8hj-VERFmoJBnY43qrfinzC9MsZD6n3gF6NwTIBZqbXmhR96zHUkYheAaoaAwUr5HNxN65GrkJJsKzNBonw_VuuBGK6xKcqdhcoTXNxrCpFWWbMmr4AoeZ2YnBS1fQLUDFm84gTPSiT0SeXhhwjnZ2Wlx2KNkjgGA_hoMUWDBTmVVFvh-kVVmGCdpxTta6-Wm_nhd4hl1wCZeZVzIvtmYlof6ij53Dc3GPNmjj11nzK8jn1439S8JtaLYEKhg5o5GG7jNVlHcbewZ4ezr6DmUfD68CtnJQ0g1HeClKKDhidBoNyRYYlENLA6dTmExaPZE3l3EXdHaqKfj9-YD_f92C-m3fNSsgBoWGSG-sSHKwGxaZfgCPgX8Awmyb8ZNWQx8PSKmVROAdJGyboCkA3up1g8WS72JowmaYkXCgEiKgjZ0ZEJoXG3wfjwZsV1s0KTgYnkr9RYo3Rkdk0Cx9eMS0F9h3RP3iuolaDIcyCTSYugWSpDrWlDa9odNotOWSB_c1OnY0LXMlJ2cEkHviEVj-BGWVImCRvGoa702H0VnRq8QEptJoYv2GB6KKnXxdEcm8EeXIdhAqk2IlQaY-YvSNHspMXRWBJL5v4xCgRToCir9vIxi6TqLun9wVNvJtCvZFsRp1Ve_Q4O5vKnJSeGclV1md68jlokOVm9Vg_e6wKksf7kizzFyRjEBCFyeNSMzdfAFMrVxK9dTRJ_kYsFUwBo2CLyFlcxlAZ_VzkpVSTY4igtY72zwck6BiEjnUHKkDwUSkNHUBHWxtfY1YwT39Cf7_eD_j3svClmTaeDgYHJ2-i-0lt7-hKq3EBX8vJsDL7IPodhZpHKlVEBP8yTIJPHAEupT8cIlgkEevIhofLsAUECtmHD4LBJKlwRhOOwtgEtyZ8Zli-9jswqldI1DxqF7baItfXBRPRVZZgT-OjjVTUQl9cbrp8DmGlAZKSjSjhZJiCHYP8-cyOURpxOeBPyhVdFzVV7fz_NIsU7jQFNn--Fis7e-oBhbHJsdy1)
 
-
-Forked repo.
+Teensy 3.X Project Template
+===========================
 
 Purpose
 -------
